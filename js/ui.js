@@ -1,4 +1,4 @@
-// Railhead: the sector rows, the report, the reserves and the pop-up windows
+// Beachhead: the sector rows, the report, the reserves and the pop-up windows
 
 const UI = (() => {
   let st, onChange;
@@ -132,8 +132,15 @@ const UI = (() => {
         const short = f && f.trains + 0.05 < sec.trains + troopFor(sec.id);
         return `${t(sec.trains * TRAIN_TONS)} t a day` + (short ? `<br><span class="warn">line takes ${f.trains.toFixed(1)}</span>` : '');
       });
-      const trucks = stepper('🚚 Trucks', () => sec.trucks, v => sec.trucks = v, () => free('trucks', TRUCK_COLUMNS), () =>
-        `${t(Sim.truckCapacity(st, sec))} t a day<br>over ${t(Math.max(20, Sim.gap(st, sec)))} km`);
+      const trucks = stepper('🚚 Trucks', () => sec.trucks, v => Sim.moveTrucks(st, sec, v - sec.trucks), () => free('trucks', TRUCK_COLUMNS), () => {
+        const c = Math.round(sec.truckCond), col = c > 66 ? 'var(--good)' : c > 40 ? 'var(--fuel)' : 'var(--bad)';
+        return `<span class="dayrow" title="Condition of this army's truck columns: worn trucks carry less"><span>🔧</span><span class="bar"><i style="width:${c}%;background:${col}"></i></span><span class="${c <= 40 ? 'warn' : ''}">${c}%</span></span>${t(Sim.truckCapacity(st, sec))} t a day<br>over ${t(Math.max(20, Sim.gap(st, sec)))} km`;
+      });
+      const redBall = el('button', 'redball', '🔴 Red Ball');
+      redBall.title = `The Red Ball Express: this army's trucks drive ${RED_BALL_SPEED}× as far on one-way roads, but wear faster, and the other armies' trucks carry ${Math.round((1 - RED_BALL_DRAIN) * 100)}% less`;
+      redBall.onclick = () => { st.redBall = st.redBall === sec.id ? null : sec.id; onChange(); };
+      trucks.insertBefore(redBall, trucks.lastChild);
+      trucks.redBall = redBall;
       const engineers = stepper('🛠️ Engineers', () => sec.engineers, v => sec.engineers = v, () => free('engineers', ENGINEERS), () => engineerNote(sec));
       const focus = segment(Object.keys(ENGINEER_FOCUS).map(k => ({ value: k, label: ENGINEER_FOCUS[k].name, title: ENGINEER_FOCUS[k].hint })),
         () => sec.focus, v => sec.focus = v);
@@ -287,6 +294,12 @@ const UI = (() => {
     }
     if (f.lineShort && f.trainRatio < 1) return ['bad', `🚧 The line only takes <b>${f.lineTakes.toFixed(1)}</b> trains a day${choke()}. Set engineers to <b>Station 🚉</b> so more get through.`];
     const depotDays = Math.min(f.depotDaysF, f.depotDaysA);
+    if (sec.truckCond < 45 && f.truckRatio < 1) {
+      return ['bad', `🔧 This army's trucks are worn (${Math.round(sec.truckCond)}%) and carry only ${Math.round((TRUCK_MIN_LOAD + (1 - TRUCK_MIN_LOAD) * sec.truckCond / 100) * 100)}% of a load. Rest them: take a column off (it recovers ${TRUCK_REST}% a day), then put a rested one back.`];
+    }
+    if (f.gap > 150 && f.truckRatio < 0.8 && st.redBall !== sec.id) {
+      return ['meh', `🔴 The front is ${t(f.gap)} km beyond the railhead and the trucks can't keep up. Give this army the <b>Red Ball</b> (trucks go ${RED_BALL_SPEED}× as far), or more trucks.`];
+    }
     // Advancing on a trickle wastes it: better to stop, stock up and go again
     const frontDays = Math.min(f.daysF, f.daysA);
     if (frontDays < 0.6 && Math.min(f.truckRatio, f.trainRatio) < SHORT_SUPPLY + 0.3) {
@@ -377,6 +390,11 @@ const UI = (() => {
     freeBadge('#free-trains', Sim.freeTrains(st));
 
     freeBadge('#free-trucks', Sim.freePool(st, 'trucks', TRUCK_COLUMNS));
+    const resting = Sim.freePool(st, 'trucks', TRUCK_COLUMNS);
+    $('#free-trucks').textContent = `${resting} resting`;
+    $('#free-trucks').title = `Resting columns: ${Math.round(st.restCond)}% condition. Columns not given to an army rest and recover ${TRUCK_REST}% a day. Take a worn column off an army, put a rested one on`;
+    const fuel = Sim.fuelPlan(st);
+    $('#fuel-state').innerHTML = fuel.factor < 0.98 ? `<span class="free short" title="The mixes ask for more fuel than the ports landed today: every army gets ${Math.round(fuel.factor * 100)}% of the fuel it asked for, the rest of the train space goes to ammo">⛽ ${Math.round(fuel.factor * 100)}% of fuel</span>` : `<span class="free have" title="Fuel landed covers what the mixes ask for">⛽ ${t(fuel.landed - fuel.asked)} t spare</span>`;
     freeBadge('#free-engineers', Sim.freePool(st, 'engineers', ENGINEERS));
     freeBadge('#free-bombers', Sim.freePool(st, 'bombers', BOMBER_GROUPS - st.bombersLost));
 
@@ -390,6 +408,7 @@ const UI = (() => {
       c.advice.className = 'c-advice ' + adviceTone;
       c.advice.innerHTML = adviceText;
       for (const s of c.steppers) s.update();
+      c.steppers[1].redBall.classList.toggle('on', st.redBall === sec.id);
       c.focus.update();
       const rec = matchMix(sec);
       c.mix.update(rec);

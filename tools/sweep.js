@@ -33,6 +33,31 @@ strategies.build4 = st => {
   }
 };
 strategies.build4Recon = st => { strategies.build4(st); strategies.recon(st); };
+// A player who also looks after the trucks and the fuel: mix matched to need, worn columns rested, Red Ball for the army furthest behind
+strategies.redBallOnly = st => {
+  strategies.pulse(st);
+  const behind = st.sectors.filter(s => s.posture === 'advance').sort((a, b) => (Sim.LINES[b.id].at(-1) - b.front) - (Sim.LINES[a.id].at(-1) - a.front))[0];
+  st.redBall = behind && Sim.gap(st, behind) > 120 ? behind.id : null;
+};
+strategies.restOnly = st => {
+  strategies.pulse(st);
+  // Keep two columns resting: swap the most worn army's column for a rested one
+  const worn = st.sectors.slice().sort((a, b) => a.truckCond - b.truckCond)[0];
+  if (worn.truckCond < st.restCond - 25) { Sim.moveTrucks(st, worn, -1); Sim.moveTrucks(st, worn, +1); }
+};
+strategies.managed = st => {
+  strategies.build4(st);
+  for (const s of st.sectors) {
+    const n = Sim.needs(s, 'advance'), share = 100 * n.fuel / (n.fuel + n.ammo);
+    s.fuelMix = [80, 67, 50, 33, 20].reduce((a, b) => (Math.abs(b - share) < Math.abs(a - share) ? b : a));
+  }
+  // Rest the most worn army's columns one at a time, and bring rested ones back
+  const worn = st.sectors.slice().sort((a, b) => a.truckCond - b.truckCond)[0];
+  if (worn.truckCond < 55 && worn.trucks > 2) Sim.moveTrucks(st, worn, -1);
+  if (st.restCond > 90) { const need = st.sectors.slice().sort((a, b) => b.truckCond - a.truckCond).find(s => s.posture === 'advance'); if (need) Sim.moveTrucks(st, need, +1); }
+  const behind = st.sectors.filter(s => s.posture === 'advance').sort((a, b) => (Sim.LINES[b.id].at(-1) - b.front) - (Sim.LINES[a.id].at(-1) - a.front))[0];
+  st.redBall = behind && Sim.gap(st, behind) > 80 ? behind.id : null;
+};
 // A tuned player: mix matched to need, trains and trucks shared by need (and gap), plus build4 holding
 strategies.tuned = st => {
   strategies.build4(st);

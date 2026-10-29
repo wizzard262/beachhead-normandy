@@ -1,4 +1,4 @@
-# Railhead: Normandy 1944: the prompts
+# Beachhead: Normandy 1944: the prompts
 
 > **Note for Claude:** every time a prompt is given to work on this game, add a short summary of it here (spelling and typos fixed), newest at the bottom. Include any decisions made in reply to your questions, and every assumption made without asking. This file is the history of how the game was made, and the game links to it (top right, **prompts**).
 
@@ -56,9 +56,33 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - If it's ready, publish it on harriercarrier.com under Railhead, in the same format, and add it to the portfolio; Steve will play it and see how it goes
 - Home page banner panel under Railhead's (the map with a RAILHEAD title card: "Normandy · Summer 1944 · Land it, clear the ports, rebuild the bridges", and a red PLAY stamp), the game in the website's `railhead-normandy/` folder, the portfolio list and pictures, the sitemap
 
+## 4. A name of its own: Beachhead
+
+- Normandy is really a new, different game: give it a different name and main badge, reflecting the beaches
+- Options offered: Beachhead, Over the Beach, Mulberry, Red Ball. Chosen: **Beachhead** (mirrors Railhead; the foothold everything is supplied through)
+- Renamed in the game, its pages and the home page banner (BEACHHEAD · Normandy · Summer 1944); the website address is now `/beachhead/`, and the old `/railhead-normandy/` forwards there. The repo keeps its name `railhead-normandy` for now
+- The chosen level is now remembered separately from Railhead's
+
+## 5. Badge and map looks
+
+- Show other military map styles for the main logo: six badge mock-ups (staff map card, blueprint, supply crate, planning overlay, wartime poster, aerial recon). Planning overlay good, but just the centre badge; and different in-game map backgrounds (aged paper, printed army map, topographic, blueprint, aerial recon). The choice is also the background of the harriercarrier.com banner. Shown all on one page
+- Chosen: **aerial recon photo** for the logo, **blueprint** for the map
+  - The banner: the blueprint map with an aerial recon print in the centre (ships, beach, fields, film grain), BEACHHEAD in white chinagraph, "SORTIE 106G/4021 · NORMANDY · SUMMER 1944", a red PLAY ring
+  - The in-game map is the blueprint, with towns, track, bridges, ports, flags, the front and the legend redrawn in light ink; other looks stay available with `?map=paper|printed|topo|recon` on the address
+
+## 6. Trucks are the game, fuel is the crisis
+
+- Are the mechanics just the same, with the same resources? (About two thirds the same; ideas offered.) Add these two:
+- **Trucks wear out**: each army's columns lose condition as they drive (shown as a 🔧 bar in the Trucks column) and worn trucks carry less (down to 40% of a load). Columns taken off an army **rest** and recover 12% a day ("N resting" above the column); taking a worn one off and putting a rested one back swaps them. 20 truck columns, 6 per army and 2 resting at the start
+- **🔴 Red Ball** button on one army at a time: its trucks go 2.5× as far but wear faster, and the other armies' trucks carry 10% less
+- **Fuel is the scarce cargo**: the ports land at most 55% of their tonnage as petrol. If the armies' mixes ask for more, each gets a share and the rest of the train space carries ammo ("⛽ 93% of fuel" in red above the Train mix). Armies now need much more fuel and less ammo; the default mix is 2:1
+- The adviser warns about worn trucks and suggests the Red Ball when the front is far beyond the railhead
+- Balance (150 games each): leaving everything alone now almost always loses; pausing to stock up wins 97% on Easy, 77% on Normal, 20% on Hard; resting trucks well 99% / 97% / 53%; the Red Ball 94% / 82% / 52%
+
 ## Sessions
 
 | # | Date | Length | What we did |
 |---|------|--------|-------------|
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
+| 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |

@@ -1,4 +1,4 @@
-// Railhead: Normandy 1944. The rules. No drawing here, so it also runs headless (tools/balance.js)
+// Beachhead: Normandy 1944. The rules. No drawing here, so it also runs headless (tools/balance.js)
 
 const Sim = (() => {
   // Seeded random numbers, so a game can be replayed
@@ -48,7 +48,7 @@ const Sim = (() => {
       reserves: [], queue: [], marching: [],
       bombersLost: 0,
       soviet: { pool: 10, buildup: null, lastTarget: null },
-      storm: 0, ports: {}, bridges: [],
+      storm: 0, ports: {}, bridges: [], redBall: null, restCond: 100, fuelFactor: 1,
       report: [], events: { attacks: [], raids: [], captures: [], bombed: [] },
       intel: null, won: false, lost: false, wonDay: null,
       history: [],
@@ -65,7 +65,7 @@ const Sim = (() => {
       const startKm = LINES[s.id][1] + 5;
       const sec = {
         id: s.id, posture: 'advance',
-        trains: s.id === 'south' ? 5 : 4, fuelMix: 50, focus: 'balanced', trucks: s.id === 'south' ? 6 : 5, engineers: 6, bombers: s.id === 'north' ? 2 : 3,
+        trains: s.id === 'south' ? 5 : 4, fuelMix: 67, focus: 'balanced', trucks: 6, truckCond: TRUCK_START_COND, engineers: 6, bombers: s.id === 'north' ? 2 : 3,
         front: startKm, lastAdvance: 0, lastCapture: 1,
         forces: Object.assign({}, s.forces),
         depot: { fuel: 2500, ammo: 2000 }, stock: { fuel: 0, ammo: 0 },
@@ -143,10 +143,36 @@ const Sim = (() => {
   function gap(st, sec) { return Math.max(0, sec.front - railhead(st, sec).km); }
 
   // Tons a day the sector's trucks can carry from the railhead to the front
+  // Worn columns carry less; the Red Ball army's trucks go twice as far, the others give up some of theirs
   function truckCapacity(st, sec) {
     const d = Math.max(20, gap(st, sec));
-    const trips = Math.min(2, TRUCK_KM_PER_DAY / (2 * d));
-    return Math.round(sec.trucks * TRUCK_TONS * trips);
+    const redBall = st.redBall === sec.id;
+    const trips = Math.min(2, TRUCK_KM_PER_DAY * (redBall ? RED_BALL_SPEED : 1) / (2 * d));
+    const order = TRUCK_MIN_LOAD + (1 - TRUCK_MIN_LOAD) * sec.truckCond / 100;
+    const drain = st.redBall && !redBall ? RED_BALL_DRAIN : 1;
+    return Math.round(sec.trucks * TRUCK_TONS * trips * order * drain);
+  }
+
+  // Moving columns in or out of an army: resting columns (unassigned) mix their condition in
+  function moveTrucks(st, sec, delta) {
+    if (delta > 0 && freePool(st, 'trucks', TRUCK_COLUMNS) <= 0) return;
+    if (delta < 0 && sec.trucks <= 0) return;
+    const free = freePool(st, 'trucks', TRUCK_COLUMNS);
+    if (delta > 0) sec.truckCond = (sec.truckCond * sec.trucks + st.restCond) / (sec.trucks + 1);
+    else st.restCond = (st.restCond * free + sec.truckCond) / (free + 1);
+    sec.trucks += delta;
+  }
+
+  // Fuel landed against fuel asked for: if the mixes ask for more petrol than came ashore, every army gets a share
+  function fuelPlan(st) {
+    const got = allocateTrains(st);
+    let asked = 0;
+    for (const sec of st.sectors) {
+      const supply = Math.max(0, got[sec.id] - requested(st, sec).troop);
+      asked += supply * TRAIN_TONS * sec.fuelMix / 100;
+    }
+    const landed = landing(st).total * TRAIN_TONS * FUEL_SHARE;
+    return { asked, landed, factor: asked > landed ? landed / asked : 1 };
   }
 
   // Trains each sector asks for today: supply trains plus troop trains queued for it
@@ -391,8 +417,11 @@ const Sim = (() => {
       if (st.ports.antwerp.scheldt >= 100) rep.push('⚓ The British & Canadians have cleared the Scheldt: ships can reach Antwerp.');
     }
 
-    // 3. Trains: troop trains first, the rest is supply
+    // 3. Trains: troop trains first, the rest is supply. Fuel only as far as the ports landed it
     const got = allocateTrains(st);
+    const fuel = fuelPlan(st);
+    st.fuelFactor = fuel.factor;
+    if (fuel.factor < 0.95) rep.push(`⛽ Fuel shortage: the armies asked for ${Math.round(fuel.asked).toLocaleString()} t of petrol, only ${Math.round(fuel.landed).toLocaleString()} t came ashore. The trains carried ammo instead.`);
     for (const sec of st.sectors) {
       let trains = got[sec.id];
       const mine = st.queue.filter(q => q.sector === sec.id);
@@ -411,8 +440,9 @@ const Sim = (() => {
         }
       }
       const tons = Math.max(0, trains) * TRAIN_TONS;
-      sec.depot.fuel += tons * sec.fuelMix / 100;
-      sec.depot.ammo += tons * (100 - sec.fuelMix) / 100;
+      const fuelTons = tons * sec.fuelMix / 100 * fuel.factor;
+      sec.depot.fuel += fuelTons;
+      sec.depot.ammo += tons - fuelTons;
       sec.got = { trains: got[sec.id], tons: Math.round(tons), trucked: 0 };
     }
 
@@ -453,7 +483,13 @@ const Sim = (() => {
       sec.stock.fuel += wf;
       sec.stock.ammo += wa;
       sec.got.trucked = Math.round(wf + wa);
+      // Wear: in proportion to how hard the columns worked today
+      const use = cap > 0 ? Math.min(1, (wf + wa) / cap) : 0;
+      const before = sec.truckCond;
+      sec.truckCond = Math.max(5, sec.truckCond - use * TRUCK_WEAR * (st.redBall === sec.id ? RED_BALL_WEAR : 1));
+      if (before >= 40 && sec.truckCond < 40) rep.push(`🔧 ${SECTOR_NAME(sec.id)}: trucks badly worn (${Math.round(sec.truckCond)}%). Rest some: take them off the army for a few days.`);
     }
+    st.restCond = Math.min(100, st.restCond + TRUCK_REST);
 
     // 6. Fighting: German attack first, then the advance
     for (const sec of st.sectors) {
@@ -667,7 +703,7 @@ const Sim = (() => {
   }
 
   return {
-    landing, trainsToday, portTrains, bridgeBlock,
+    landing, trainsToday, portTrains, bridgeBlock, moveTrucks, fuelPlan,
     LINES, LINKS, linkKey, newGame, endDay, needs, power, limits, railhead, railheadIndex, gap,
     truckCapacity, forecast, freePool, freeTrains, sendUnit, cancelUnit, dateText, sectorDef,
   };

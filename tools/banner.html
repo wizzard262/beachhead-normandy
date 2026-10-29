@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Railhead Normandy banner</title>
+<title>Beachhead banner</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap">
 <style>
   body { margin: 0; background: #222; }
@@ -35,31 +35,66 @@
     v.addColorStop(0, 'rgba(30,22,12,0)'); v.addColorStop(1, 'rgba(30,22,12,.55)');
     g.fillStyle = v; g.fillRect(0, 0, W, H);
 
-    // The title card in the middle, so phones (which see the middle) still get it
-    const cw = 1060, ch = 400, cx = (W - cw) / 2, cy = (H - ch) / 2 - 10;
+    // The badge in the middle, so phones (which see the middle) still get it: an aerial reconnaissance print
+    // of the beachhead, with the title written on it in white chinagraph
+    const cw = 1040, ch = 440, cx = (W - cw) / 2, cy = (H - ch) / 2 - 6;
     g.save();
-    g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 40; g.shadowOffsetY = 12;
-    g.fillStyle = '#f4ead2'; g.fillRect(cx, cy, cw, ch);
+    g.translate(W / 2, H / 2); g.rotate(-0.02); g.translate(-W / 2, -H / 2);
+    g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 36; g.shadowOffsetY = 14;
+    g.fillStyle = '#f2efe6'; g.fillRect(cx - 18, cy - 18, cw + 36, ch + 36);      // the print's white border
+    g.shadowColor = 'transparent';
+    g.save(); g.beginPath(); g.rect(cx, cy, cw, ch); g.clip();
+    // Land: a patchwork of grey fields
+    g.fillStyle = '#7d7f76'; g.fillRect(cx, cy, cw, ch);
+    let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 260; i++) {
+      const v = 95 + Math.floor(rnd() * 60);
+      g.fillStyle = `rgba(${v},${v + 3},${v - 6},.7)`;
+      g.save(); g.translate(cx + rnd() * cw, cy + 170 + rnd() * (ch - 150)); g.rotate((rnd() - 0.5) * 0.5);
+      g.fillRect(0, 0, 40 + rnd() * 90, 26 + rnd() * 50); g.restore();
+    }
+    // Sea at the top, the beach, and the surf line
+    const sea = g.createLinearGradient(0, cy, 0, cy + 190);
+    sea.addColorStop(0, '#2f3437'); sea.addColorStop(1, '#4f565a');
+    g.fillStyle = sea;
+    g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + cw, cy); g.lineTo(cx + cw, cy + 150);
+    g.bezierCurveTo(cx + cw * 0.7, cy + 185, cx + cw * 0.35, cy + 140, cx, cy + 172); g.closePath(); g.fill();
+    g.fillStyle = '#b7b5a6';
+    g.beginPath(); g.moveTo(cx, cy + 172); g.bezierCurveTo(cx + cw * 0.35, cy + 140, cx + cw * 0.7, cy + 185, cx + cw, cy + 150);
+    g.lineTo(cx + cw, cy + 182); g.bezierCurveTo(cx + cw * 0.7, cy + 215, cx + cw * 0.35, cy + 172, cx, cy + 205); g.closePath(); g.fill();
+    // Ships offshore and landing craft on the sand, with their wakes
+    g.fillStyle = '#1e2224';
+    for (const [x, y, w] of [[90, 60, 70], [230, 40, 90], [400, 75, 60], [560, 35, 100], [760, 70, 75], [900, 45, 60]]) g.fillRect(cx + x, cy + y, w, 12);
+    g.strokeStyle = 'rgba(220,220,210,.35)'; g.lineWidth = 2;
+    for (const [x, y] of [[150, 120], [300, 110], [470, 128], [640, 112], [820, 125]]) { g.beginPath(); g.moveTo(cx + x, cy + y); g.lineTo(cx + x + 12, cy + y + 38); g.stroke(); }
+    g.fillStyle = '#2a2e30';
+    for (const x of [160, 312, 482, 652, 832]) g.fillRect(cx + x, cy + 160, 18, 9);
+    // Film grain
+    for (let i = 0; i < 26000; i++) { const v = Math.floor(rnd() * 255); g.fillStyle = `rgba(${v},${v},${v},${(rnd() * 0.12).toFixed(3)})`; g.fillRect(cx + rnd() * cw, cy + rnd() * ch, 2, 2); }
     g.restore();
-    g.strokeStyle = '#2b2418'; g.lineWidth = 6; g.strokeRect(cx + 18, cy + 18, cw - 36, ch - 36);
-    g.lineWidth = 2; g.strokeRect(cx + 30, cy + 30, cw - 60, ch - 60);
-    g.fillStyle = '#2b2418'; g.textAlign = 'center';
-    g.font = '170px "Special Elite"';
-    g.fillText('RAILHEAD', W / 2, cy + 190);
-    g.font = '46px "Special Elite"';
-    g.fillText('Normandy · Summer 1944', W / 2, cy + 262);
-    g.font = 'italic 38px Georgia, serif';
-    g.fillStyle = '#6e6350';
-    g.fillText('Land it, clear the ports, rebuild the bridges.', W / 2, cy + 325);
+    // White chinagraph: title, sortie number, a ringed depot
+    g.fillStyle = '#ffffff'; g.textAlign = 'left';
+    g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 6;
+    g.font = '138px "Special Elite"';
+    g.fillText('BEACHHEAD', cx + 46, cy + 345);
+    g.font = '34px "Special Elite"';
+    g.fillText('SORTIE 106G/4021 · NORMANDY · SUMMER 1944', cx + 52, cy + 400);
+    g.shadowColor = 'transparent';
+    g.strokeStyle = '#ffffff'; g.lineWidth = 5;
+    g.beginPath(); g.arc(cx + cw - 130, cy + 245, 52, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.moveTo(cx + cw - 90, cy + 212); g.lineTo(cx + cw - 40, cy + 190); g.stroke();
+    g.font = '26px "Special Elite"'; g.fillStyle = '#ffffff';
+    g.fillText('DEPOT', cx + cw - 120, cy + 182);
+    g.restore();
 
-    // A red rubber stamp
+    // PLAY in red grease pencil, ringed, on the map beside the print
     g.save();
-    g.translate(cx + cw - 70, cy + ch + 20);
-    g.rotate(-0.16);
-    g.strokeStyle = 'rgba(163,41,28,.9)'; g.fillStyle = 'rgba(163,41,28,.9)';
-    g.lineWidth = 7; g.strokeRect(-150, -52, 300, 104);
-    g.font = '64px "Special Elite"'; g.textAlign = 'center';
-    g.fillText('PLAY ▶', 0, 22);
+    g.translate(cx + cw - 30, cy + ch + 40); g.rotate(-0.1);
+    g.fillStyle = 'rgba(242,239,230,.92)'; g.beginPath(); g.ellipse(0, -8, 150, 60, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#c22d23'; g.lineWidth = 8; g.lineCap = 'round';
+    g.beginPath(); g.ellipse(0, -8, 150, 60, 0, 0.2, Math.PI * 2 - 0.1); g.stroke();
+    g.fillStyle = '#c22d23'; g.font = '68px "Special Elite"'; g.textAlign = 'center';
+    g.fillText('PLAY ▶', 0, 14);
     g.restore();
 
     const small = document.createElement('canvas');

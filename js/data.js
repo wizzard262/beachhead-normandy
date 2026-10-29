@@ -1,24 +1,37 @@
-// Railhead: Normandy 1944. The map and the world numbers for the Allied breakout
+// Beachhead: Normandy 1944. The map and the world numbers for the Allied breakout
 
 const START_DATE = new Date(1944, 7, 1);    // day 1 = Tuesday 1 August 1944, a week after the Cobra breakout began
 const LAST_DAY = 50;                         // 19 September 1944 (Normal; the balance tools use this)
 
 // Difficulty: the same campaign, a different deadline
 const DIFFICULTY = {
-  easy:   { name: 'Easy',   lastDay: 53, hint: 'Deadline 22 September. Leaving everything alone wins about half the time' },
-  normal: { name: 'Normal', lastDay: 50, hint: 'Deadline 19 September. Leaving everything alone wins about a quarter of the time' },
-  hard:   { name: 'Hard',   lastDay: 46, hint: 'Deadline 15 September. Leaving everything alone rarely wins: clear ports, rebuild bridges, hold and push' },
+  easy:   { name: 'Easy',   lastDay: 53, hint: 'Deadline 22 September. Forgiving: pausing to stock up when supply runs short is usually enough' },
+  normal: { name: 'Normal', lastDay: 50, hint: 'Deadline 19 September. Pause to stock up, rest worn trucks, watch the fuel' },
+  hard:   { name: 'Hard',   lastDay: 46, hint: 'Deadline 15 September. Rest trucks, run the Red Ball, clear ports and bridges early: every day counts' },
 };
 
 // What you have each day. Supply comes ashore over the beaches and through captured ports (see PORTS)
-const TRUCK_COLUMNS = 16;
+const TRUCK_COLUMNS = 20;
 const ENGINEERS = 18;           // railway engineer battalions (track, bridges, stations)
 const BOMBER_GROUPS = 8;
 
 const TRAIN_TONS = 450;         // one supply train
 const TRUCK_TONS = 300;         // one truck column, one trip
 const TRUCK_KM_PER_DAY = 250;   // there and back counts double
-const TRUCK_FUEL = 0.0005;      // tons of fuel burnt per ton carried per km
+const TRUCK_FUEL = 0.0006;      // tons of fuel burnt per ton carried per km
+
+// Trucks wear out. A column carries its full load only when in good order
+const TRUCK_START_COND = 85;    // condition of the truck columns on day 1 (%)
+const TRUCK_WEAR = 1.5;           // condition lost per day by columns driving flat out (%)
+const TRUCK_REST = 12;          // condition regained per day by columns resting (unassigned) (%)
+const TRUCK_MIN_LOAD = 0.4;     // a worn-out column still carries this share
+// The Red Ball Express: one army's trucks on one-way roads, driving day and night
+const RED_BALL_SPEED = 2.5;       // its trucks cover this many times the distance
+const RED_BALL_WEAR = 1.3;      // ... and wear this much faster
+const RED_BALL_DRAIN = 0.9;     // the other armies' trucks carry this share (roads and drivers taken)
+
+// Fuel is the crisis: the ports land plenty of ammunition but only so much petrol
+const FUEL_SHARE = 0.55;        // most of the landed tonnage that can be fuel; the rest is ammo and everything else
 const CONVERT_KM = 2.6;           // bombed track repaired per engineer battalion per day (the bridges take longer: see BRIDGES)
 const REPAIR = 6;               // station condition repaired per battalion per day
 const BOMBER_FUEL = 25;         // tons per bomber group per day, from the sector's depot
@@ -123,13 +136,13 @@ const SECTORS = [
 // need = tons a day by posture; attack/defend = combat power; speed = km a day added
 const UNIT_TYPES = {
   inf: { name: 'Infantry division', short: 'Inf', icon: '✕', trains: 2, march: 40,
-         need: { advance: { fuel: 40, ammo: 70 }, hold: { fuel: 10, ammo: 30 } },
+         need: { advance: { fuel: 60, ammo: 50 }, hold: { fuel: 12, ammo: 25 } },
          attack: 1, defend: 1.5, speed: 0.5 },
   pz:  { name: 'Armoured division', short: 'Armd', icon: '⬭', trains: 3, march: 100,
-         need: { advance: { fuel: 280, ammo: 70 }, hold: { fuel: 30, ammo: 25 } },
+         need: { advance: { fuel: 340, ammo: 50 }, hold: { fuel: 35, ammo: 20 } },
          attack: 2.5, defend: 1, speed: 3 },
   art: { name: 'Artillery group', short: 'Art', icon: '●', trains: 2, march: 40,
-         need: { advance: { fuel: 25, ammo: 150 }, hold: { fuel: 6, ammo: 60 } },
+         need: { advance: { fuel: 40, ammo: 110 }, hold: { fuel: 8, ammo: 50 } },
          attack: 1.5, defend: 2.5, speed: 0 },
 };
 const UNIT_ORDER = ['inf', 'pz', 'art'];

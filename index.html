@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Railhead: Normandy 1944</title>
+<title>Beachhead: Normandy 1944</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b2418'/%3E%3Cpath d='M6 24h20M9 20h14M12 8v12M20 8v12' stroke='%23efe3c4' stroke-width='3'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap">
@@ -57,9 +57,9 @@
   #help-btn2:hover { background: #d98a24; }
   .legend { flex: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; font-size: 12px; color: var(--muted); margin: 4px 2px 0; }
   .legend i { display: inline-block; vertical-align: middle; margin-right: 4px; }
-  .lg-track { width: 22px; height: 4px; background: #2b2418; }
-  .lg-broad { width: 22px; height: 0; border-top: 3px dashed rgba(120,40,30,.7); }
-  .lg-front { width: 22px; height: 4px; background: rgba(150,35,25,.85); }
+  .lg-track { width: 22px; height: 4px; background: #eef4ff; box-shadow: 0 0 0 3px #2a5f9a; }
+  .lg-broad { width: 22px; height: 0; border-top: 3px dashed rgba(255,190,170,.95); box-shadow: 0 0 0 3px #2a5f9a; }
+  .lg-front { width: 22px; height: 4px; background: rgba(255,95,80,.95); box-shadow: 0 0 0 3px #2a5f9a; }
 
   #side { flex: 0 0 320px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; }
   .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-height: 0; overflow: auto; }
@@ -97,6 +97,8 @@
   .free { display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 9px; background: rgba(40,30,15,.08); font-weight: 600; }
   .free.have { background: var(--good); color: #fff; }
   .free.short { background: var(--bad); color: #fff; }
+  button.redball { font-size: 11px; padding: 1px 6px; align-self: flex-start; }
+  button.redball.on { background: #c22d23; color: #fff; border-color: #c22d23; }
   .card { background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--sec); border-radius: 8px; padding: 6px 10px; margin-bottom: 6px; row-gap: 3px; }
   .c-name { grid-row: span 2; display: grid; grid-template-columns: auto auto; justify-content: space-between; align-content: start; gap: 3px 6px; }
   .c-name > :not(.forces) { grid-column: 1; }
@@ -214,7 +216,7 @@
 </head>
 <body>
 <header>
-  <h1>RAILHEAD <small>NORMANDY 1944</small></h1>
+  <h1>BEACHHEAD <small>NORMANDY 1944</small></h1>
   <div class="when"><span id="date"></span><span id="day"></span></div>
   <div id="objectives"></div>
   <div class="links">
@@ -222,7 +224,7 @@
     <button id="new-btn">New game</button>
     <a href="prompts.html" target="_blank" rel="noopener">prompts</a>
     <a href="screenshots.html" target="_blank" rel="noopener">screenshots</a>
-    <span id="ver">v3</span>
+    <span id="ver">v6</span>
   </div>
 </header>
 
@@ -241,7 +243,7 @@
       <span><i class="lg-track"></i>Repaired track</span>
       <span><i class="lg-broad"></i>Bombed track (repair to use)</span>
       <span><i class="lg-front"></i>Front line</span>
-      <span>🌉 bridge: red = blown, black = rebuilt · ⚑ Railhead · ■ big station · bar = condition · <b style="color:#a3291c">?</b> reported German build-up · hover a station for its stocks</span>
+      <span>🌉 bridge: red = blown, white = working · ⚑ Railhead · ■ big station · bar = condition · <b style="color:#a3291c">?</b> reported German build-up · hover a station for its stocks</span>
       <span id="unit-legend"></span>
     </div>
   </div>
@@ -268,7 +270,7 @@
     <span>🚂 Trains <span class="free" id="free-trains"></span></span>
     <span>🚚 Trucks <span class="free" id="free-trucks"></span></span>
     <span>🛠️ Engineers <span class="free" id="free-engineers"></span></span>
-    <span class="h-mix">Train mix ⛽ / 💥</span>
+    <span class="h-mix">Train mix ⛽ / 💥 <span id="fuel-state"></span></span>
     <span>✈️ Bombers <span class="free" id="free-bombers"></span></span>
   </div>
   <div id="sectors"></div>
@@ -285,6 +287,8 @@
       <li>⚓ <b>Everything comes ashore</b>: the beaches and Mulberry, then ports. <b>Channel storms</b> cut the beaches to a quarter for a few days, and from September the weather wears them down. Ports arrive <b>wrecked</b>: put <b>port companies</b> on them (⚓ Ports panel) to clear them. <b>Le Havre</b> feeds the line at Rouen, <b>Antwerp</b> right at the front, but Antwerp is useless until the <b>Scheldt</b> is cleared: port companies, plus the British &amp; Canadians holding at Antwerp with ammo.</li>
       <li>🌉 <b>Blown bridges</b>: the Germans blow the river bridges as they retreat. The railhead stops at a blown bridge until your engineers rebuild it, which takes many battalion-days. Move fast and you may take one intact.</li>
       <li>🚂 <b>Trains</b> run only on repaired track. Allied bombers wrecked the French railways before D-Day, so your trains stop where the repaired track ends: the <b>railhead</b>. That can be past the last station.</li>
+      <li>🔧 <b>Trucks wear out.</b> Each army's columns lose condition as they drive, and worn trucks carry less. Columns you take off an army <b>rest</b> and recover; put rested ones back on. The 🔴 <b>Red Ball</b> button gives one army one-way roads: its trucks go much further but wear faster, and the other armies' trucks carry less.</li>
+      <li>⛽ <b>Fuel is the crisis.</b> The ports land plenty of ammunition but only so much petrol. If the armies' mixes ask for more fuel than came ashore, each gets a share and the rest of the train space carries ammo. The count above the Train mix shows it.</li>
       <li>🚚 <b>Trucks</b> carry supplies from the railhead to the front. The further the front gets ahead, the less they carry, and they burn fuel doing it.</li>
       <li>🛠️ <b>Engineers</b> repair track and stations: <b>🛤️ Track</b> pushes the railhead on, <b>Station 🚉</b> fixes stations first. The Germans wreck stations as they retreat: the faster you take them, the less damage.</li>
       <li>✈️ <b>Fighter-bombers</b> slow German resistance. Put them where air recon reports a <b>build-up</b> to weaken the counterattack. They burn fuel from that sector's depot.</li>
@@ -308,10 +312,10 @@
   </div>
 </div>
 
-<script src="js/data.js?v=3"></script>
-<script src="js/sim.js?v=3"></script>
-<script src="js/draw.js?v=3"></script>
-<script src="js/ui.js?v=3"></script>
-<script src="js/main.js?v=3"></script>
+<script src="js/data.js?v=6"></script>
+<script src="js/sim.js?v=6"></script>
+<script src="js/draw.js?v=6"></script>
+<script src="js/ui.js?v=6"></script>
+<script src="js/main.js?v=6"></script>
 </body>
 </html>

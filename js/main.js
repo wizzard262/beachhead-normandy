@@ -1,4 +1,4 @@
-// Railhead: start-up, the end-of-day animation and input
+// Beachhead: start-up, the end-of-day animation and input
 
 window.Game = (() => {
   const ANIM_MS = 1600;   // how long the trains and lorries roll at the end of each day
@@ -6,7 +6,7 @@ window.Game = (() => {
   const canvas = document.getElementById('map');
   const G = window.Game = { forecast: {} };
   // The chosen difficulty is remembered on this computer
-  try { G.level = localStorage.getItem('railhead.level') || 'normal'; } catch (e) { G.level = 'normal'; }
+  try { G.level = localStorage.getItem('beachhead.level') || 'normal'; } catch (e) { G.level = 'normal'; }
   if (!DIFFICULTY[G.level]) G.level = 'normal';
 
   function refresh() {
@@ -49,7 +49,7 @@ window.Game = (() => {
   G.restart = () => { start(); UI.setState(st); refresh(); UI.showLevel(); };
   G.setLevel = level => {
     G.level = level;
-    try { localStorage.setItem('railhead.level', level); } catch (e) { /* not saved, still used this time */ }
+    try { localStorage.setItem('beachhead.level', level); } catch (e) { /* not saved, still used this time */ }
     if (st.day === 1 && st.level !== level) G.restart();
   };
   G.endDay = endDay;

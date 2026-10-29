@@ -1,4 +1,4 @@
-# Railhead: Normandy 1944
+# Beachhead: Normandy 1944
 
 August 1944. The Allies have broken out of Normandy. You run supply for three armies racing for Germany. The generals fight; you decide what reaches them.
 
@@ -12,4 +12,4 @@ Take Paris, Antwerp, Aachen and Metz before the deadline:
 - **New divisions** land and go forward by train
 - Resistance stiffens at the German border
 
-Open `index.html` in a browser. No build step. A spin-off of [Railhead](https://www.harriercarrier.com/railhead/index.html).
+Open `index.html` in a browser. No build step. A sister game to [Railhead](https://www.harriercarrier.com/railhead/index.html).

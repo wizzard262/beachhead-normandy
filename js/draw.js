@@ -1,4 +1,4 @@
-// Railhead: the staff map. It is 1000 units wide and as tall as its box allows.
+// Beachhead: the staff map. It is 1000 units wide and as tall as its box allows.
 // Stations are placed for a clear game board rather than true geography
 
 const Draw = (() => {
@@ -67,60 +67,137 @@ const Draw = (() => {
     return () => { a = (a * 16807) % 2147483647; return a / 2147483647; };
   }
 
+  // Looks for the map background. Preview one with ?map=<name> on the page address
+  const THEMES = {
+    paper:     { bg: ['#efe3c4', '#d9c79c'], noise: 'rgba(90,70,30,A)', grid: 'rgba(120,95,50,.16)', sea: '#c9d7d8', waves: 'rgba(70,110,150,.3)',
+                 seaLabel: 'rgba(50,90,130,.75)', hedge: 'rgba(80,105,60,.35)', wood: 'blob', woodCol: 'rgba(80,105,60,A)', river: 'rgba(70,110,150,.7)',
+                 label: 'rgba(60,80,60,.55)', border: 'rgba(110,60,110,.55)' },
+    printed:   { bg: ['#f4f0e2', '#ebe5cf'], noise: null, grid: 'rgba(40,40,40,.28)', gridLabels: true, sea: '#a9cbe0', waves: null,
+                 seaLabel: 'rgba(30,70,120,.9)', hedge: 'rgba(60,110,50,.45)', wood: 'trees', woodCol: '#a9cc8c', river: '#3d7fb8',
+                 label: 'rgba(40,80,40,.8)', border: 'rgba(150,40,120,.7)', contours: 'rgba(150,100,50,.45)' },
+    topo:      { bg: ['#f1e9d2', '#e2d4ae'], noise: 'rgba(90,70,30,A)', grid: 'rgba(120,95,50,.12)', sea: '#bcd3dc', waves: null,
+                 seaLabel: 'rgba(50,90,130,.75)', hedge: 'rgba(80,105,60,.25)', wood: 'blob', woodCol: 'rgba(80,105,60,A)', river: 'rgba(60,110,160,.75)',
+                 label: 'rgba(60,80,60,.55)', border: 'rgba(110,60,110,.55)', contours: 'rgba(140,90,40,.32)', many: true, shade: true },
+    blueprint: { light: true, bg: ['#2a5f9a', '#1b4a80'], noise: null, grid: 'rgba(255,255,255,.12)', sea: '#173f6c', waves: 'rgba(255,255,255,.18)',
+                 seaLabel: 'rgba(255,255,255,.7)', hedge: 'rgba(255,255,255,.18)', wood: 'outline', woodCol: 'rgba(255,255,255,.35)', river: 'rgba(200,225,255,.75)',
+                 label: 'rgba(255,255,255,.65)', border: 'rgba(255,200,120,.7)' },
+    recon:     { bg: ['#8f9184', '#76786d'], noise: 'rgba(30,30,30,A)', grain: true, grid: 'rgba(255,255,255,.08)', sea: '#4b5257', waves: 'rgba(255,255,255,.08)',
+                 seaLabel: 'rgba(255,255,255,.75)', hedge: 'rgba(40,45,35,.35)', wood: 'blob', woodCol: 'rgba(35,40,30,A)', river: 'rgba(55,62,66,.9)',
+                 label: 'rgba(255,255,255,.7)', border: 'rgba(255,255,255,.5)', fields: true },
+  };
+  // Ink for everything drawn on top of the map: dark on paper, light on the blueprint
+  const INK = {
+    ink: '#2b2418', soft: 'rgba(43,36,24,.45)', gap: '#efe3c4', bombed: 'rgba(120,40,30,.6)',
+    townFill: '#f4ead2', enemyFill: '#e9c6b8', enemyInk: '#8a2a1e', barBg: 'rgba(40,30,15,.25)', hover: '#1a5fa8',
+    front: 'rgba(150,35,25,.85)', enemyShade: 'rgba(170,50,35,.07)', enemyHatch: 'rgba(170,50,35,.12)', unitBody: '#4b5638', unitLight: '#e6dcc0',
+  };
+  const INK_LIGHT = Object.assign({}, INK, {
+    ink: '#eef4ff', soft: 'rgba(238,244,255,.5)', gap: '#21548c', bombed: 'rgba(255,190,170,.8)',
+    townFill: '#2a5f9a', enemyFill: '#5a3a5c', enemyInk: '#ffb4a6', barBg: 'rgba(255,255,255,.22)', hover: '#ffd166',
+    front: 'rgba(255,95,80,.95)', enemyShade: 'rgba(255,90,70,.10)', enemyHatch: 'rgba(255,120,100,.16)', unitBody: '#e8f0fb', unitLight: '#2a5f9a',
+  });
+  let K = INK;
+  let THEME = THEMES.paper;
+  // The game's own look is the blueprint; ?map=<name> shows another
+  THEME = THEMES.blueprint;
+  try { const m = new URLSearchParams(location.search).get('map'); if (THEMES[m]) THEME = THEMES[m]; } catch (e) { /* default look */ }
+  if (THEME.light) K = INK_LIGHT;
+
   // The paper, rivers, forests and marsh never change, so they are drawn once
   function makePaper() {
     const c = document.createElement('canvas');
     c.width = W * 2; c.height = H * 2;
     const g = c.getContext('2d');
     g.scale(2, 2);
+    const T = THEME;
     const grad = g.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, 700);
-    grad.addColorStop(0, '#efe3c4'); grad.addColorStop(1, '#d9c79c');
+    grad.addColorStop(0, T.bg[0]); grad.addColorStop(1, T.bg[1]);
     g.fillStyle = grad; g.fillRect(0, 0, W, H);
     const r = scatter(7);
-    for (let i = 0; i < 9000; i++) {
-      g.fillStyle = `rgba(90,70,30,${r() * 0.06})`;
+    // Aerial photo: a patchwork of fields
+    if (T.fields) {
+      for (let i = 0; i < 700; i++) {
+        const v = 110 + Math.floor(r() * 50);
+        g.fillStyle = `rgba(${v},${v + 4},${v - 8},.55)`;
+        g.save(); g.translate(r() * W, r() * H); g.rotate((r() - 0.5) * 0.6);
+        g.fillRect(0, 0, 14 + r() * 30, 10 + r() * 22); g.restore();
+      }
+    }
+    if (T.noise) for (let i = 0; i < (T.grain ? 30000 : 9000); i++) {
+      g.fillStyle = T.noise.replace('A', (r() * (T.grain ? 0.18 : 0.06)).toFixed(3));
       g.fillRect(r() * W, r() * H, 1 + r() * 1.5, 1 + r() * 1.5);
     }
+    // Contour lines (and hill shading) on the printed and topographic looks
+    if (T.contours) {
+      const hills = [[0.30, 0.55], [0.58, 0.30], [0.86, 0.36], [0.70, 0.75], [0.15, 0.80], [0.95, 0.60], [0.40, 0.80]];
+      for (const [hx, hy] of (T.many ? hills.concat([[0.12, 0.40], [0.50, 0.95], [0.78, 0.15]]) : hills)) {
+        const c0 = px(hx, hy), rings = T.many ? 7 : 4;
+        if (T.shade) { const sg = g.createRadialGradient(c0.x - 10, c0.y - 10, 5, c0.x, c0.y, 80); sg.addColorStop(0, 'rgba(120,80,30,.12)'); sg.addColorStop(1, 'rgba(120,80,30,0)'); g.fillStyle = sg; g.beginPath(); g.arc(c0.x, c0.y, 80, 0, Math.PI * 2); g.fill(); }
+        g.strokeStyle = T.contours; g.lineWidth = 0.8;
+        for (let k = 1; k <= rings; k++) {
+          g.beginPath();
+          for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.2) {
+            const rr = k * 11 * (1 + 0.18 * Math.sin(a * 3 + hx * 9) + 0.1 * Math.cos(a * 5 + hy * 7));
+            const x = c0.x + Math.cos(a) * rr * 1.5, y = c0.y + Math.sin(a) * rr;
+            a ? g.lineTo(x, y) : g.moveTo(x, y);
+          }
+          g.closePath(); g.stroke();
+        }
+      }
+    }
     // Map grid
-    g.strokeStyle = 'rgba(120,95,50,.16)'; g.lineWidth = 0.7;
+    g.strokeStyle = T.grid; g.lineWidth = 0.7;
     for (let x = 50; x < W; x += 50) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
     for (let y = 50; y < H; y += 50) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    if (T.gridLabels) {
+      g.fillStyle = 'rgba(40,40,40,.6)'; g.font = '9px system-ui, sans-serif';
+      for (let x = 50, n = 10; x < W; x += 50, n++) g.fillText(String(n), x + 2, H - 3);
+      for (let y = 50, n = 30; y < H; y += 50, n--) g.fillText(String(n), 2, y - 2);
+    }
     const pts = list => list.map(([fx, fy]) => px(fx, fy));
     const shape = (list, fill) => { const q = pts(list); g.fillStyle = fill; g.beginPath(); g.moveTo(q[0].x, q[0].y); for (const p of q) g.lineTo(p.x, p.y); g.closePath(); g.fill(); return q; };
     // The Channel, with the Cotentin peninsula reaching up to Cherbourg
     shape([[-0.2, -0.3], [0.62, -0.3], [0.56, -0.06], [0.46, 0.02], [0.30, 0.10], [0.24, 0.17], [0.16, 0.20], [0.08, 0.19], [0.02, 0.17],
-           [-0.02, 0.12], [-0.03, 0.02], [-0.06, -0.02], [-0.12, 0.0], [-0.2, 0.3]], '#c9d7d8');
-    g.strokeStyle = 'rgba(70,110,150,.3)'; g.lineWidth = 1;
-    for (let i = 0; i < 90; i++) {
+           [-0.02, 0.12], [-0.03, 0.02], [-0.06, -0.02], [-0.12, 0.0], [-0.2, 0.3]], T.sea);
+    g.strokeStyle = T.waves || 'transparent'; g.lineWidth = 1;
+    for (let i = 0; i < (T.waves ? 90 : 0); i++) {
       const x = r() * W * 0.6, y = r() * px(0, 0.15).y;
       g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 3, y - 3, x + 6, y); g.quadraticCurveTo(x + 9, y + 3, x + 12, y); g.stroke();
     }
-    g.fillStyle = 'rgba(50,90,130,.75)'; g.font = 'italic 15px Georgia, serif';
+    g.fillStyle = T.seaLabel; g.font = 'italic 15px Georgia, serif';
     const ch = px(0.22, 0.02);
     g.fillText('E n g l i s h   C h a n n e l', ch.x, ch.y);
     // Cherbourg, the first big port, at the tip of the peninsula
 
     // Bocage: hedgerow country round Saint-Lô and Avranches
-    g.strokeStyle = 'rgba(80,105,60,.35)'; g.lineWidth = 1;
+    g.strokeStyle = T.hedge; g.lineWidth = 1;
     for (let i = 0; i < 70; i++) {
       const c0 = px(-0.04 + r() * 0.2, 0.30 + r() * 0.45);
       g.beginPath(); g.rect(c0.x, c0.y, 8 + r() * 10, 6 + r() * 7); g.stroke();
     }
-    g.fillStyle = 'rgba(60,80,60,.55)'; g.font = 'italic 11px Georgia, serif';
+    g.fillStyle = T.label; g.font = 'italic 11px Georgia, serif';
     const bo = px(0.08, 0.56);
     g.fillText('b o c a g e', bo.x, bo.y);
     // Forests: the Ardennes and a few others
     const forests = [[0.83, 0.30], [0.88, 0.40], [0.52, 0.32], [0.30, 0.46], [0.60, 0.86], [0.92, 0.62]];
     for (const [fx, fy] of forests) {
       const c0 = px(fx, fy);
+      if (T.wood === 'trees') {
+        // Printed-map woods: a flat green patch with little tree marks
+        g.fillStyle = T.woodCol; g.beginPath(); g.ellipse(c0.x, c0.y, 52, 30, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = 'rgba(40,90,40,.55)';
+        for (let i = 0; i < 26; i++) { const a = r() * Math.PI * 2, d = Math.sqrt(r()); const x = c0.x + Math.cos(a) * d * 46, y = c0.y + Math.sin(a) * d * 25; g.beginPath(); g.arc(x, y, 1.8, 0, Math.PI * 2); g.fill(); }
+        continue;
+      }
       for (let i = 0; i < 70; i++) {
         const a = r() * Math.PI * 2, d = Math.sqrt(r()) * 36;
         const x = c0.x + Math.cos(a) * d * 1.4, y = c0.y + Math.sin(a) * d * 0.8;
-        g.fillStyle = `rgba(80,105,60,${0.12 + r() * 0.12})`;
+        if (T.wood === 'outline') { g.strokeStyle = T.woodCol; g.lineWidth = 0.8; g.beginPath(); g.arc(x, y, 3 + r() * 3, 0, Math.PI * 2); g.stroke(); continue; }
+        g.fillStyle = T.woodCol.replace('A', (0.12 + r() * (T.grain ? 0.4 : 0.12)).toFixed(3));
         g.beginPath(); g.arc(x, y, 3 + r() * 3, 0, Math.PI * 2); g.fill();
       }
     }
-    g.fillStyle = 'rgba(60,80,60,.55)'; g.font = 'italic 11px Georgia, serif';
+    g.fillStyle = T.label; g.font = 'italic 11px Georgia, serif';
     const ar = px(0.85, 0.35);
     g.fillText('A r d e n n e s', ar.x - 30, ar.y);
     // Rivers, drawn to pass the right towns on this layout
@@ -133,8 +210,8 @@ const Draw = (() => {
       'Moselle': [[1.04, 0.55], [1.00, 0.72], [0.99, 0.92], [0.96, 1.12]],
       'Scheldt': [[0.58, -0.12], [0.66, -0.04], [0.73, 0.02], [0.78, 0.10]],
     };
-    g.strokeStyle = 'rgba(70,110,150,.7)'; g.lineCap = 'round'; g.lineJoin = 'round';
-    g.fillStyle = 'rgba(50,90,130,.75)'; g.font = 'italic 11px Georgia, serif';
+    g.strokeStyle = T.river; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.fillStyle = T.seaLabel; g.font = 'italic 11px Georgia, serif';
     for (const name in rivers) {
       const rp = pts(rivers[name]);
       g.lineWidth = name === 'Seine' || name === 'Meuse' ? 2.6 : 1.8;
@@ -149,10 +226,10 @@ const Draw = (() => {
     }
     // The German border
     const border = pts([[0.90, -0.12], [0.93, 0.12], [0.95, 0.36], [0.99, 0.60], [1.10, 0.80]]);
-    g.strokeStyle = 'rgba(110,60,110,.55)'; g.lineWidth = 2; g.setLineDash([10, 5, 2, 5]);
+    g.strokeStyle = T.border; g.lineWidth = 2; g.setLineDash([10, 5, 2, 5]);
     g.beginPath(); g.moveTo(border[0].x, border[0].y); for (const p of border) g.lineTo(p.x, p.y); g.stroke();
     g.setLineDash([]);
-    g.fillStyle = 'rgba(110,60,110,.7)'; g.font = '10px "Special Elite", monospace';
+    g.fillStyle = T.border; g.font = '10px "Special Elite", monospace';
     const bl = px(0.955, 0.40);
     g.save(); g.translate(bl.x, bl.y); g.rotate(1.35); g.fillText('German border', 0, 0); g.restore();
     // Title block
@@ -167,15 +244,15 @@ const Draw = (() => {
     const mx = a.x + (b.x - a.x) * f, my = a.y + (b.y - a.y) * f;
     ctx.lineCap = 'butt';
     if (f < 1) {
-      ctx.strokeStyle = 'rgba(120,40,30,.6)'; ctx.lineWidth = 3; ctx.setLineDash([7, 5]);
+      ctx.strokeStyle = K.bombed; ctx.lineWidth = 3; ctx.setLineDash([7, 5]);
       ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(b.x, b.y); ctx.stroke();
       ctx.setLineDash([]);
     }
     if (f > 0) {
-      ctx.strokeStyle = '#2b2418'; ctx.lineWidth = L.cap >= 7 ? 5 : 4;
+      ctx.strokeStyle = K.ink; ctx.lineWidth = L.cap >= 7 ? 5 : 4;
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(mx, my); ctx.stroke();
       // Railway sleepers
-      ctx.strokeStyle = '#efe3c4'; ctx.lineWidth = 1.2;
+      ctx.strokeStyle = K.gap; ctx.lineWidth = 1.2;
       const len = Math.hypot(mx - a.x, my - a.y), ux = (mx - a.x) / (len || 1), uy = (my - a.y) / (len || 1);
       for (let d = 6; d < len; d += 9) {
         const x = a.x + ux * d, y = a.y + uy * d;
@@ -201,18 +278,18 @@ const Draw = (() => {
     for (const id of ['cherbourg', 'lehavre', 'antwerp']) {
       const p = portSpot(id), ps = st.ports[id], PT = PORTS[id];
       if (id === 'lehavre') {
-        ctx.strokeStyle = 'rgba(43,36,24,.45)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = K.soft; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
         ctx.beginPath(); ctx.moveTo(p.x + 6, p.y + 2); ctx.lineTo(P.rouen.x - 8, P.rouen.y - 2); ctx.stroke(); ctx.setLineDash([]);
       }
-      ctx.fillStyle = ps.taken ? '#f4ead2' : '#e9c6b8'; ctx.strokeStyle = ps.taken ? '#2b2418' : '#8a2a1e'; ctx.lineWidth = 1.5;
+      ctx.fillStyle = ps.taken ? K.townFill : K.enemyFill; ctx.strokeStyle = ps.taken ? K.ink : K.enemyInk; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(p.x, p.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.font = '11px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('⚓', p.x, p.y + 0.5); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      if (id !== 'antwerp') { ctx.fillStyle = '#2b2418'; ctx.font = 'bold 12px Georgia, serif'; ctx.fillText(PT.name, p.x + 12, p.y - 4); }
+      if (id !== 'antwerp') { ctx.fillStyle = K.ink; ctx.font = 'bold 12px Georgia, serif'; ctx.fillText(PT.name, p.x + 12, p.y - 4); }
       if (!ps.taken) continue;
       // Cleared bar, and the Scheldt still to clear for Antwerp
       const c = ps.scheldt < 100 ? ps.scheldt : ps.cond;
-      ctx.fillStyle = 'rgba(40,30,15,.25)'; ctx.fillRect(p.x - 12, p.y + 12, 24, 4);
+      ctx.fillStyle = K.barBg; ctx.fillRect(p.x - 12, p.y + 12, 24, 4);
       ctx.fillStyle = ps.scheldt < 100 ? '#2f5d8a' : c > 66 ? '#3f7a3a' : c > 33 ? '#c47a1a' : '#a3291c';
       ctx.fillRect(p.x - 12, p.y + 12, 24 * c / 100, 4);
       if (ps.scheldt < 100) { ctx.fillStyle = '#2f5d8a'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.fillText('Scheldt mined', p.x - 30, p.y + 26); }
@@ -229,9 +306,9 @@ const Draw = (() => {
   function drawBridges(st) {
     for (const br of st.bridges) {
       const p = bridgeSpot(br);
-      const col = br.state === 'enemy' ? 'rgba(90,80,70,.6)' : br.state === 'blown' ? '#a3291c' : '#2b2418';
+      const col = br.state === 'enemy' ? K.soft : br.state === 'blown' ? '#a3291c' : K.ink;
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.ang);
-      ctx.fillStyle = '#efe3c4'; ctx.fillRect(-10, -6, 20, 12);
+      ctx.fillStyle = K.gap; ctx.fillRect(-10, -6, 20, 12);
       ctx.strokeStyle = col; ctx.lineWidth = 2;
       ctx.beginPath();
       if (br.state === 'blown') { ctx.moveTo(-9, -5); ctx.lineTo(-2, -5); ctx.moveTo(2, -5); ctx.lineTo(9, -5); ctx.moveTo(-9, 5); ctx.lineTo(-2, 5); ctx.moveTo(2, 5); ctx.lineTo(9, 5); }
@@ -241,7 +318,7 @@ const Draw = (() => {
       ctx.restore();
       if (br.state === 'blown') {
         // Rebuilding progress as a ring
-        ctx.strokeStyle = 'rgba(40,30,15,.2)'; ctx.lineWidth = 3;
+        ctx.strokeStyle = K.barBg; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI * 2); ctx.stroke();
         if (br.done > 0) { ctx.strokeStyle = '#c47a1a'; ctx.beginPath(); ctx.arc(p.x, p.y, 13, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * br.done / br.work); ctx.stroke(); }
         ctx.fillStyle = '#a3291c'; ctx.font = 'bold 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -263,18 +340,18 @@ const Draw = (() => {
     const big = N.cap >= 9;
     const base = p.y + 6;
     if (id === 'beaches') {
-      ctx.fillStyle = '#e8c27a'; ctx.strokeStyle = '#2b2418'; ctx.lineWidth = 1.5;
+      ctx.fillStyle = '#e8c27a'; ctx.strokeStyle = K.ink; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.roundRect ? ctx.roundRect(p.x - 16, p.y - 8, 32, 14, 4) : ctx.rect(p.x - 16, p.y - 8, 32, 14); ctx.fill(); ctx.stroke();
       ctx.font = '11px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('⚓', p.x, p.y - 1); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      ctx.fillStyle = '#2b2418'; ctx.font = 'bold 13px Georgia, serif';
+      ctx.fillStyle = K.ink; ctx.font = 'bold 13px Georgia, serif';
       const [lx, ly] = labelOffset(id);
       ctx.fillText(N.name, p.x + lx, p.y + ly);
       return;
     }
     ctx.lineWidth = 1.2;
-    ctx.fillStyle = n.captured ? '#f4ead2' : '#e9c6b8';
-    ctx.strokeStyle = n.captured ? '#2b2418' : '#8a2a1e';
+    ctx.fillStyle = n.captured ? K.townFill : K.enemyFill;
+    ctx.strokeStyle = n.captured ? K.ink : K.enemyInk;
     for (const [bx, h, w, roof] of TOWN[big ? 'large' : 'small']) {
       const x = p.x + bx, top = base - h;
       ctx.beginPath();
@@ -288,7 +365,7 @@ const Draw = (() => {
       fire(p, base, 1 - n.cond / 100, big, id);
       // Condition bar
       const c = n.cond / 100;
-      ctx.fillStyle = 'rgba(40,30,15,.25)'; ctx.fillRect(p.x - 12, base + 4, 24, 4);
+      ctx.fillStyle = K.barBg; ctx.fillRect(p.x - 12, base + 4, 24, 4);
       ctx.fillStyle = c > 0.66 ? '#3f7a3a' : c > 0.33 ? '#c47a1a' : '#a3291c';
       ctx.fillRect(p.x - 12, base + 4, 24 * c, 4);
     }
@@ -296,8 +373,8 @@ const Draw = (() => {
       ctx.strokeStyle = n.captured ? '#3f7a3a' : '#a3291c'; ctx.lineWidth = 2;
       ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(p.x, p.y - 2, big ? 20 : 16, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
     }
-    if (hover) { ctx.strokeStyle = '#1a5fa8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y - 2, big ? 24 : 20, 0, Math.PI * 2); ctx.stroke(); }
-    ctx.fillStyle = '#2b2418';
+    if (hover) { ctx.strokeStyle = K.hover; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y - 2, big ? 24 : 20, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.fillStyle = K.ink;
     ctx.font = (big ? 'bold 13px' : '12px') + ' Georgia, serif';
     const [lx, ly] = labelOffset(id);
     ctx.fillText(N.name, p.x + lx, p.y + ly);
@@ -361,7 +438,9 @@ const Draw = (() => {
       ['body', 'M9 11.5a1 1 0 1 0 2 0a1 1 0 1 0-2 0Z'],
     ],
   };
-  const UNIT_COLOURS = { body: '#4b5638', light: '#e6dcc0' };
+  // On the map the unit pictures follow the ink; on the cream panels they stay olive (PANEL_UNIT_COLOURS)
+  const UNIT_COLOURS = { get body() { return K.unitBody; }, get light() { return K.unitLight; } };
+  const PANEL_UNIT_COLOURS = { body: '#4b5638', light: '#e6dcc0' };
   const paths = {};
 
   function unitPicture(type, x, y, w = 26, h = 17) {
@@ -395,7 +474,7 @@ const Draw = (() => {
     // At a station the flag stands just left of the town; out on the line it stands on the track
     const p = past ? along(sec.id, rh.km) : P[rh.node];
     const ox = past ? 0 : -20 + (i - 1) * 6;
-    ctx.strokeStyle = '#2b2418'; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = K.ink; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(p.x + ox, p.y + 4); ctx.lineTo(p.x + ox, p.y - 20); ctx.stroke();
     ctx.fillStyle = col;
     ctx.beginPath(); ctx.moveTo(p.x + ox, p.y - 20); ctx.lineTo(p.x + ox - 13, p.y - 16); ctx.lineTo(p.x + ox, p.y - 12); ctx.closePath(); ctx.fill();
@@ -410,12 +489,12 @@ const Draw = (() => {
     ctx.beginPath(); ctx.moveTo(line[0].x, line[0].y);
     for (const p of line) ctx.lineTo(p.x, p.y);
     ctx.lineTo(W, H); ctx.lineTo(W, 0); ctx.closePath();
-    ctx.fillStyle = 'rgba(170,50,35,.07)'; ctx.fill();
+    ctx.fillStyle = K.enemyShade; ctx.fill();
     ctx.clip();
-    ctx.strokeStyle = 'rgba(170,50,35,.12)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = K.enemyHatch; ctx.lineWidth = 1;
     for (let x = -H; x < W; x += 14) { ctx.beginPath(); ctx.moveTo(x, H); ctx.lineTo(x + H, 0); ctx.stroke(); }
     ctx.restore();
-    ctx.strokeStyle = 'rgba(150,35,25,.85)'; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = K.front; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(line[0].x, line[0].y);
     for (let i = 1; i < line.length - 1; i++) {
       const mx = (line[i].x + line[i + 1].x) / 2, my = (line[i].y + line[i + 1].y) / 2;
@@ -423,7 +502,7 @@ const Draw = (() => {
     }
     ctx.lineTo(bottom.x, bottom.y); ctx.stroke();
     // Teeth facing the enemy
-    ctx.fillStyle = 'rgba(150,35,25,.85)';
+    ctx.fillStyle = K.front;
     for (let i = 0; i < line.length - 1; i++) {
       const a = line[i], b = line[i + 1], len = Math.hypot(b.x - a.x, b.y - a.y);
       const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
@@ -674,5 +753,5 @@ const Draw = (() => {
     return null;
   }
 
-  return { init, resize, render, hit, along, P, W, UNIT_ART, UNIT_COLOURS, get H() { return H; } };
+  return { init, resize, render, hit, along, P, W, UNIT_ART, UNIT_COLOURS: PANEL_UNIT_COLOURS, get H() { return H; } };
 })();
