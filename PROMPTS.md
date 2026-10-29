@@ -79,6 +79,11 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - The adviser warns about worn trucks and suggests the Red Ball when the front is far beyond the railhead
 - Balance (150 games each): leaving everything alone now almost always loses; pausing to stock up wins 97% on Easy, 77% on Normal, 20% on Hard; resting trucks well 99% / 97% / 53%; the Red Ball 94% / 82% / 52%
 
+## 7. Tidy-ups
+
+- The column counts overlapped ("2 resting" ran into Engineers): each column's count now sits under its name
+- No scrolling in the two top-right boxes: the report shows its two most important lines with "+ N more" to open the rest; ports are one line each; each division type is one line with short send buttons (Br, 1st, 3rd); the boxes grow instead of scrolling
+
 ## Sessions
 
 | # | Date | Length | What we did |

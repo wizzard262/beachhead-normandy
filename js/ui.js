@@ -431,16 +431,15 @@ const UI = (() => {
       const P = PORTS[id], ps = st.ports[id];
       const now = Sim.portTrains(st, id);
       let status;
-      if (!ps.taken) status = `not taken (${NODES[P.takenWith].name})`;
-      else if (ps.scheldt < 100) status = `<span class="warn">Scheldt mined: ${Math.round(ps.scheldt)}% clear</span>`;
+      if (!ps.taken) status = 'not taken';
+      else if (ps.scheldt < 100) status = `<span class="warn">Scheldt ${Math.round(ps.scheldt)}%</span>`;
       else if (P.beach && st.storm > 0) status = '<span class="warn">🌊 storm</span>';
-      else if (ps.cond < 100) status = `${Math.round(ps.cond)}% cleared`;
-      else status = 'working fully';
+      else if (ps.cond < 100) status = `${Math.round(ps.cond)}%`;
+      else status = 'full';
       const c = Math.round(ps.cond), col = c > 66 ? 'var(--good)' : c > 33 ? 'var(--fuel)' : 'var(--bad)';
       const row = el('div', 'port' + (ps.taken ? '' : ' dim'));
       row.title = P.hint;
-      row.innerHTML = `<div class="port-top"><b>⚓ ${P.name}</b><span>${now.toFixed(1)} / ${P.trains} 🚂</span></div>
-        <div class="port-mid"><span class="bar"><i style="width:${ps.taken ? c : 0}%;background:${col}"></i></span><span class="muted">${status}</span></div>`;
+      row.innerHTML = `<div class="port-mid"><b class="port-name">⚓ ${P.name.replace('Beaches & Mulberry', 'Beaches')}</b><span class="bar"><i style="width:${ps.taken ? c : 0}%;background:${col}"></i></span><span class="muted">${status}</span><span class="port-n">${now.toFixed(1)}/${P.trains}</span></div>`;
       if (ps.taken) {
         const step = el('span', 'step small');
         const minus = el('button', '', '−'), val = el('b', '', String(ps.companies)), plus = el('button', '', '+');
@@ -458,20 +457,22 @@ const UI = (() => {
     const res = $('#reserves');
     res.textContent = '';
     if (!st.reserves.length && !st.queue.length) res.append(el('p', 'muted', 'No units waiting. More arrive over the coming weeks.'));
-    if (st.reserves.length && Sim.freeTrains(st) < 2) res.append(el('p', 'res-hint', '👉 Free trains first: lower a 🚂 Trains below'));
+    if (st.reserves.length && Sim.freeTrains(st) < 2) res.append(el('p', 'res-hint', '👉 free trains first (lower a 🚂 below)'));
     for (const type of UNIT_ORDER) {
       const units = st.reserves.filter(u => u.type === type);
       if (!units.length) continue;
       const T = UNIT_TYPES[type];
       const row = el('div', 'unit');
-      row.append(el('div', '', `${unitIcon(type)} <b>${units.length} × ${T.name}</b> <span class="muted cost">${T.trains} 🚂 · ${T.need.advance.fuel + T.need.advance.ammo} t/d</span>`));
-      const btns = el('div', 'send');
+      row.append(el('span', 'unit-name', `${unitIcon(type)} <b>${units.length} × ${T.short}</b>`));
+      row.title = `${T.name}: each takes ${T.trains} trains to send, then uses ${T.need.advance.fuel + T.need.advance.ammo} t a day`;
+      const btns = el('span', 'send');
       btns.title = `Each takes ${T.trains} trains to send, then uses ${T.need.advance.fuel + T.need.advance.ammo} t a day`;
       for (const sec of st.sectors) {
-        const b = el('button', '', '→ ' + Sim.sectorDef(sec.id).name);
+        // Short labels so a whole division type fits on one line; the full army name is in the hover text
+        const b = el('button', '', { north: 'Br', centre: '1st', south: '3rd' }[sec.id] || Sim.sectorDef(sec.id).name);
         b.style.setProperty('--sec', Sim.sectorDef(sec.id).colour);
         b.disabled = Sim.freeTrains(st) < T.trains;
-        b.title = b.disabled ? `Free ${T.trains} trains first (take them off a sector's supply trains)` : `Load one on the next trains to ${Sim.sectorDef(sec.id).name}`;
+        b.title = b.disabled ? `Free ${T.trains} trains first (take them off an army's supply trains), then send one to ${Sim.sectorDef(sec.id).name}` : `Send one to ${Sim.sectorDef(sec.id).name} on the next trains`;
         b.onclick = () => { Sim.sendUnit(st, units[0].id, sec.id); onChange(); };
         btns.append(b);
       }
@@ -480,7 +481,7 @@ const UI = (() => {
     }
     for (const q of st.queue) {
       const row = el('div', 'unit queued');
-      row.append(el('span', '', `${unitIcon(q.type)} <b>${UNIT_TYPES[q.type].name}</b> <span class="muted">loading for ${Sim.sectorDef(q.sector).name}</span> `));
+      row.append(el('span', 'unit-name', `${unitIcon(q.type)} <b>${UNIT_TYPES[q.type].short}</b> <span class="muted">loading → ${Sim.sectorDef(q.sector).short || Sim.sectorDef(q.sector).name}</span>`));
       if (q.loaded === 0) {
         const b = el('button', 'tiny', 'Cancel');
         b.onclick = () => { Sim.cancelUnit(st, q.id); onChange(); };
@@ -492,8 +493,14 @@ const UI = (() => {
     // Yesterday's report
     const rep = $('#report');
     rep.textContent = '';
-    if (st.intel) rep.append(el('li', 'intel', st.intel.text));
-    for (const line of st.report) rep.append(el('li', '', line));
+    const lines = (st.intel ? [st.intel.text] : []).concat(st.report);
+    const showAll = rep.dataset.all === String(st.day);
+    lines.slice(0, showAll ? lines.length : 2).forEach((line, k) => rep.append(el('li', k === 0 && st.intel ? 'intel' : '', line)));
+    if (lines.length > 2 && !showAll) {
+      const more = el('li', 'more', `+ ${lines.length - 2} more`);
+      more.onclick = () => { rep.dataset.all = String(st.day); update(); };
+      rep.append(more);
+    }
 
     $('#end-btn').disabled = st.won || st.lost;
     faceRight(document.body);
