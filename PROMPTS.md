@@ -51,6 +51,11 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - Hover a port or bridge on the map for its details
 - Balance (150 games each, leaving everything alone / holding and pushing well): Easy (22 Sep) 55% / 100%, Normal (19 Sep) 27% / 95–97%, Hard (15 Sep) 5% / 67%
 
+## 3. Publish it
+
+- If it's ready, publish it on harriercarrier.com under Railhead, in the same format, and add it to the portfolio; Steve will play it and see how it goes
+- Home page banner panel under Railhead's (the map with a RAILHEAD title card: "Normandy · Summer 1944 · Land it, clear the ports, rebuild the bridges", and a red PLAY stamp), the game in the website's `railhead-normandy/` folder, the portfolio list and pictures, the sitemap
+
 ## Sessions
 
 | # | Date | Length | What we did |
