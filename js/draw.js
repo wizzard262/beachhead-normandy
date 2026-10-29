@@ -12,7 +12,7 @@ const Draw = (() => {
   // Where each station sits: x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom)
   const LAYOUT = {
     beaches: [0.03, 0.24], caen: [0.14, 0.32], rouen: [0.33, 0.24], amiens: [0.50, 0.12], brussels: [0.80, 0.16], antwerp: [0.73, 0.00],
-    stlo: [0.05, 0.44], alencon: [0.21, 0.62], paris: [0.45, 0.54], sedan: [0.75, 0.40], aachen: [1.00, 0.24],
+    stlo: [0.05, 0.44], alencon: [0.21, 0.62], paris: [0.45, 0.54], sedan: [0.73, 0.42], liege: [0.88, 0.30], aachen: [1.00, 0.24],
     avranches: [0.02, 0.68], lemans: [0.19, 0.92], chartres: [0.36, 0.84], reims: [0.62, 0.66], verdun: [0.80, 0.78], metz: [0.98, 0.90],
   };
 

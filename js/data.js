@@ -10,29 +10,55 @@ const DIFFICULTY = {
   hard:   { name: 'Hard',   lastDay: 42, hint: 'Deadline 11 September. Leaving everything alone wins about a quarter of the time' },
 };
 
-// What you have each day. Supply comes ashore over the beaches and through captured ports (see LANDING)
+// What you have each day. Supply comes ashore over the beaches and through captured ports (see PORTS)
 const TRUCK_COLUMNS = 16;
-const ENGINEERS = 18;           // railway engineer battalions
+const ENGINEERS = 18;           // railway engineer battalions (track, bridges, stations)
 const BOMBER_GROUPS = 8;
 
 const TRAIN_TONS = 450;         // one supply train
 const TRUCK_TONS = 300;         // one truck column, one trip
 const TRUCK_KM_PER_DAY = 250;   // there and back counts double
 const TRUCK_FUEL = 0.0005;      // tons of fuel burnt per ton carried per km
-const CONVERT_KM = 3.0;         // bombed track and bridges repaired per engineer battalion per day
+const CONVERT_KM = 4;           // bombed track repaired per engineer battalion per day (the bridges take longer: see BRIDGES)
 const REPAIR = 6;               // station condition repaired per battalion per day
 const BOMBER_FUEL = 25;         // tons per bomber group per day, from the sector's depot
 const BOMBER_LOSS = 0.02;       // chance a group is lost on each day's sorties
 
-// Getting supplies ashore: trains a day the beachhead can load from each source
-const LANDING = {
-  beaches: 13,                  // open beaches and the Mulberry harbour
-  stormChance: 0.04,            // chance a Channel storm blows up on any day (more often in September)
-  stormMore: 0.002,             // added to stormChance each day
-  stormCut: 0.25,               // the beaches work at this share during a storm
-  cherbourg: { trains: 4, day: 9 },          // the wrecked port is cleared and opens on this day
-  antwerp: { trains: 8, clear: 18, node: 'antwerp' },  // once Antwerp is taken, the Scheldt takes this many days to clear
+// Getting supplies ashore. Each port lands up to `trains` trainloads a day, times its condition %.
+// node = where its trains join the railway: a forward port's trains skip the long haul from the beaches
+const PORTS = {
+  beaches:   { name: 'Beaches & Mulberry', node: 'beaches', trains: 9, cond: 100, beach: true,
+               hint: 'Open beaches and the Mulberry harbour. Channel storms cut them to a quarter; they wear out in autumn' },
+  cherbourg: { name: 'Cherbourg', node: 'beaches', trains: 6, cond: 15,
+               hint: 'Taken in June, but the Germans wrecked the harbour. Port companies clear it' },
+  lehavre:   { name: 'Le Havre', node: 'rouen', trains: 7, cond: 5, takenWith: 'rouen',
+               hint: 'Falls when Rouen does; badly wrecked. Its trains join the line at Rouen' },
+  antwerp:   { name: 'Antwerp', node: 'antwerp', trains: 14, cond: 70, takenWith: 'antwerp', scheldt: true,
+               hint: 'Docks taken almost intact, but useless until the Scheldt estuary is cleared. Its trains join the line at Antwerp, right at the front' },
 };
+const PORT_COMPANIES = 8;        // port clearance companies to share between the ports
+const PORT_CLEAR = 1;            // port condition cleared per company per day (%)
+const SCHELDT_CLEAR = 1.2;       // Scheldt cleared per company per day (%)
+const SCHELDT_HOLD = 5;          // ... plus this much a day while the British & Canadians hold at Antwerp with ammo in hand
+const STORM = { chance: 0.04, more: 0.002, cut: 0.25 };   // chance a Channel storm blows up each day (rising), and what the beaches keep
+const BEACH_WEAR_DAY = 35;       // from this day the autumn weather wears the beaches down...
+const BEACH_WEAR = 0.025;        // ... by this share of their capacity a day
+
+// Bridges the Germans blew on the way out. Track repair stops at a blown bridge until engineers rebuild it.
+// at = how far along the link (0 to 1); work = battalion-days to rebuild
+const BRIDGES = [
+  { link: 'caen|rouen',        at: 0.86, river: 'Seine',   work: 44 },
+  { link: 'rouen|amiens',      at: 0.88, river: 'Somme',   work: 24 },
+  { link: 'brussels|antwerp',  at: 0.45, river: 'Rupel',   work: 16 },
+  { link: 'alencon|paris',     at: 0.90, river: 'Seine',   work: 36 },
+  { link: 'paris|sedan',       at: 0.25, river: 'Marne',   work: 24 },
+  { link: 'sedan|liege',       at: 0.92, river: 'Meuse',   work: 40 },
+  { link: 'chartres|reims',    at: 0.30, river: 'Seine',   work: 36 },
+  { link: 'reims|verdun',      at: 0.88, river: 'Meuse',   work: 40 },
+  { link: 'verdun|metz',       at: 0.92, river: 'Moselle', work: 40 },
+];
+const JUNCTION_CAP = 8;          // trains a day a forward port can send across to another army's line (Antwerp → Liège, Le Havre → Paris)
+const BRIDGE_INTACT = 0.15;      // chance the Germans fail to blow a bridge when the front crosses it fast
 
 // What engineers do first: repair stations up to repairFirst %, then repair track, then repair the rest
 const ENGINEER_FOCUS = {
@@ -59,6 +85,7 @@ const NODES = {
   alencon:   { name: 'Alençon',   lon: 0.09,  lat: 48.43, cap: 6 },
   paris:     { name: 'Paris',     lon: 2.35,  lat: 48.86, cap: 12 },
   sedan:     { name: 'Sedan',     lon: 4.94,  lat: 49.70, cap: 6 },
+  liege:     { name: 'Liège',     lon: 5.57,  lat: 50.63, cap: 9 },
   aachen:    { name: 'Aachen',    lon: 6.08,  lat: 50.78, cap: 8 },
   avranches: { name: 'Avranches', lon: -1.36, lat: 48.68, cap: 5 },
   lemans:    { name: 'Le Mans',   lon: 0.20,  lat: 48.00, cap: 9 },
@@ -86,7 +113,7 @@ const SECTORS = [
     line: ['beaches', 'caen', 'rouen', 'amiens', 'brussels', 'antwerp'],
     forces: { inf: 4, pz: 2, art: 2 }, resistance: 34 },
   { id: 'centre', name: 'US First Army', short: 'US First', colour: '#2f5d8a',
-    line: ['beaches', 'stlo', 'alencon', 'paris', 'sedan', 'aachen'],
+    line: ['beaches', 'stlo', 'alencon', 'paris', 'sedan', 'liege', 'aachen'],
     forces: { inf: 4, pz: 2, art: 2 }, resistance: 30 },
   { id: 'south',  name: 'US Third Army', short: 'US Third', colour: '#3f7a3a',
     line: ['beaches', 'stlo', 'avranches', 'lemans', 'chartres', 'reims', 'verdun', 'metz'],

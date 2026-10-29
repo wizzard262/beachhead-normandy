@@ -176,7 +176,12 @@ const UI = (() => {
     const key = Sim.linkKey(line[rh.index], line[rh.index + 1]);
     const left = Math.round(Sim.LINKS[key].len - st.links[key].done);
     const next = st.nodes[line[rh.index + 1]];
+    const br = Sim.bridgeBlock(st, key);
     let s = `${left} km of track to repair to ${NODES[line[rh.index + 1]].name}`;
+    if (br && br.state === 'blown' && st.links[key].done >= Sim.LINKS[key].len * br.at - 0.5) {
+      return `🌉 rebuilding the ${br.river} bridge: ${Math.round(br.done)} of ${br.work} battalion-days`;
+    }
+    if (br && br.state === 'blown') s += ` · 🌉 ${br.river} bridge down (${br.work} days' work)`;
     if (left === 0 && next.captured && next.cond <= 0) s = `${NODES[line[rh.index + 1]].name} station needs repair`;
     else if (left === 0 && !next.captured) s = `${NODES[line[rh.index + 1]].name} not taken yet`;
     if (damaged.length) s += ` · ${damaged.length} station${damaged.length > 1 ? 's' : ''} damaged`;
@@ -272,6 +277,14 @@ const UI = (() => {
       }
       return `: <b>${NODES[c].name}</b> station is at ${Math.round(st.nodes[c].cond)}%`;
     };
+    const rhNow = Sim.railhead(st, sec), lineNow = Sim.sectorDef(sec.id).line;
+    if (rhNow.index + 1 < lineNow.length) {
+      const br = Sim.bridgeBlock(st, Sim.linkKey(lineNow[rhNow.index], lineNow[rhNow.index + 1]));
+      if (br && br.state === 'blown' && f.gap > 60) {
+        const left = br.work - br.done, eng = sec.engineers * (sec.posture === 'hold' ? HOLD_ENGINEERS : 1);
+        return ['bad', `🌉 The railhead is stuck at the blown <b>${br.river}</b> bridge: ${Math.round(left)} battalion-days of work, about ${eng ? Math.ceil(left / eng) : '∞'} days with ${sec.engineers} engineers. Add engineers, or set them to <b>🛤️ Track</b>.`];
+      }
+    }
     if (f.lineShort && f.trainRatio < 1) return ['bad', `🚧 The line only takes <b>${f.lineTakes.toFixed(1)}</b> trains a day${choke()}. Set engineers to <b>Station 🚉</b> so more get through.`];
     const depotDays = Math.min(f.depotDaysF, f.depotDaysA);
     // Advancing on a trickle wastes it: better to stop, stock up and go again
@@ -309,7 +322,7 @@ const UI = (() => {
     const days = (v, c, cls) => `<span class="dayrow"><span>${c}</span><span class="bar ${cls}"><i style="width:${Math.min(100, v / 3 * 100)}%"></i></span><span class="${v < 1 ? 'warn' : ''}">${v.toFixed(1)} d</span></span>`;
     const past = rh.laid >= 1;
     return `
-      <div class="pipe-node" title="Supplies come ashore here: beaches, Cherbourg and (once cleared) Antwerp"><b>Beaches</b><small class="${st.storm > 0 ? 'warn' : ''}">${st.storm > 0 ? '🌊 storm' : 'landing'}</small><small>${Sim.trainsToday(st)} trains/d</small></div>
+      ${sourceNode(sec)}
       ${seg('train', f.trainRatio, `🚂 ${t(f.trainTons)} t/d`, f.lineShort ? '<span class="warn">line limit</span>' : `needs ${t(f.trainNeed)}`, true)}
       <div class="pipe-node" title="${past ? `Trains run on ${t(rh.laid)} km past ${NODES[rh.node].name}; the depot is at the end of the track` : `The depot is at ${NODES[rh.node].name}`}"><b>${NODES[rh.node].name}</b>${health(rh.node)}<small>⛽ ${t(sec.depot.fuel)}</small><small>💥 ${t(sec.depot.ammo)}</small></div>
       <div class="pipe-pair" title="Train to the end of the track, then trucks to the front">
@@ -326,6 +339,17 @@ const UI = (() => {
     const c = Math.round(st.nodes[id].cond);
     const col = c > 66 ? 'var(--good)' : c > 33 ? 'var(--fuel)' : 'var(--bad)';
     return `<small class="dayrow" title="Station condition: trains it can take scale with this"><span class="bar"><i style="width:${c}%;background:${col}"></i></span><span class="${c <= 33 ? 'warn' : ''}">${c}%</span></small>`;
+  }
+
+  // The start of a sector's supply line: the ports its trains come from today
+  function sourceNode(sec) {
+    const fc = window.Game.forecast[sec.id] || { from: [] };
+    const from = (fc.from || []).slice().sort((a, b) => b.trains - a.trains);
+    const name = ids => ids.map(id => id === 'beaches' ? 'Beaches' : PORTS[id].name).join(' + ');
+    const main = from.length ? name(from[0].ports) : 'Beaches';
+    const lines = from.map(x => `${name(x.ports)}: ${x.trains.toFixed(1)}`).join('\n');
+    const storm = st.storm > 0 && from.some(x => x.ports.includes('beaches'));
+    return `<div class="pipe-node" title="Where this sector's trains are landed today\n${lines}"><b>⚓ ${main}</b>${from.length > 1 ? `<small>+ ${name(from.slice(1).flatMap(x => x.ports))}</small>` : ''}${storm ? '<small class="warn">🌊 storm</small>' : '<small>landing</small>'}</div>`;
   }
 
   // How far the front still has to go to the next station on its line
@@ -373,6 +397,39 @@ const UI = (() => {
         ...st.marching.filter(m => m.sector === sec.id).map(m => `${unitIcon(m.type)} ${UNIT_TYPES[m.type].short} in ${Math.max(1, m.day - st.day + 1)} d`),
       ];
       c.forces.innerHTML = forces + (coming.length ? `<span class="coming">coming: ${coming.join(', ')}</span>` : '');
+    }
+
+    // Ports: what each lands, its state, and the port companies clearing it
+    const pbox = $('#ports');
+    pbox.textContent = '';
+    const freeCo = PORT_COMPANIES - Object.values(st.ports).reduce((a, p) => a + p.companies, 0);
+    $('#free-companies').textContent = freeCo + ' free';
+    $('#free-companies').classList.toggle('have', freeCo > 0);
+    for (const id in PORTS) {
+      const P = PORTS[id], ps = st.ports[id];
+      const now = Sim.portTrains(st, id);
+      let status;
+      if (!ps.taken) status = `not taken (${NODES[P.takenWith].name})`;
+      else if (ps.scheldt < 100) status = `<span class="warn">Scheldt mined: ${Math.round(ps.scheldt)}% clear</span>`;
+      else if (P.beach && st.storm > 0) status = '<span class="warn">🌊 storm</span>';
+      else if (ps.cond < 100) status = `${Math.round(ps.cond)}% cleared`;
+      else status = 'working fully';
+      const c = Math.round(ps.cond), col = c > 66 ? 'var(--good)' : c > 33 ? 'var(--fuel)' : 'var(--bad)';
+      const row = el('div', 'port' + (ps.taken ? '' : ' dim'));
+      row.title = P.hint;
+      row.innerHTML = `<div class="port-top"><b>⚓ ${P.name}</b><span>${now.toFixed(1)} / ${P.trains} 🚂</span></div>
+        <div class="port-mid"><span class="bar"><i style="width:${ps.taken ? c : 0}%;background:${col}"></i></span><span class="muted">${status}</span></div>`;
+      if (ps.taken) {
+        const step = el('span', 'step small');
+        const minus = el('button', '', '−'), val = el('b', '', String(ps.companies)), plus = el('button', '', '+');
+        minus.disabled = ps.companies <= 0; plus.disabled = freeCo <= 0 || (ps.cond >= 100 && ps.scheldt >= 100);
+        minus.title = 'Fewer port companies'; plus.title = 'More port companies: each clears ' + (ps.scheldt < 100 ? `${SCHELDT_CLEAR}% of the Scheldt` : `${PORT_CLEAR}% of the harbour`) + ' a day';
+        minus.onclick = () => { ps.companies--; onChange(); };
+        plus.onclick = () => { ps.companies++; onChange(); };
+        step.append(minus, val, plus);
+        row.querySelector('.port-mid').append(step);
+      }
+      pbox.append(row);
     }
 
     // Reserves at the beaches
@@ -428,8 +485,8 @@ const UI = (() => {
     const lines = [`<b>${N.name}</b>${OBJECTIVES.includes(id) ? ' 🎯 objective' : ''}`];
     if (id === 'beaches') {
       const L = Sim.landing(st);
-      lines.push(`Supplies landed today: <b>${L.total}</b> trains`);
-      lines.push(`Beaches ${L.beaches.toFixed(1)}${st.storm > 0 ? ' (storm!)' : ''} · Cherbourg ${L.cherbourg || (st.day < LANDING.cherbourg.day ? `opens day ${LANDING.cherbourg.day}` : 0)} · Antwerp ${L.antwerp || (st.antwerpClear > 0 ? `${st.antwerpClear} days to clear` : 'not taken')}`);
+      lines.push(`Supplies landed today: <b>${L.total.toFixed(1)}</b> trainloads${st.storm > 0 ? ' · 🌊 storm' : ''}`);
+      for (const id in PORTS) lines.push(`⚓ ${PORTS[id].name}: ${L.ports[id].toFixed(1)} of ${PORTS[id].trains}`);
       const waiting = UNIT_ORDER.map(u => [u, st.reserves.filter(r => r.type === u).length]).filter(([, k]) => k);
       lines.push(waiting.length ? 'Reserves: ' + waiting.map(([u, k]) => `${k} ${UNIT_TYPES[u].short}`).join(', ') : 'No reserves waiting');
     } else if (!n.captured) {

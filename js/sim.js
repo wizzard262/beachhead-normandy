@@ -48,7 +48,7 @@ const Sim = (() => {
       reserves: [], queue: [], marching: [],
       bombersLost: 0,
       soviet: { pool: 10, buildup: null, lastTarget: null },
-      storm: 0, antwerpClear: null,
+      storm: 0, ports: {}, bridges: [],
       report: [], events: { attacks: [], raids: [], captures: [], bombed: [] },
       intel: null, won: false, lost: false, wonDay: null,
       history: [],
@@ -56,6 +56,11 @@ const Sim = (() => {
     for (const id in NODES) st.nodes[id] = { captured: id === 'beaches', everCaptured: id === 'beaches', cond: 100, day: 0 };
     for (const id in START_CAPTURED) Object.assign(st.nodes[id], { captured: true, everCaptured: true, cond: START_CAPTURED[id] });
     for (const key in LINKS) st.links[key] = { done: START_CONVERTED.includes(key) ? LINKS[key].len : 0 };
+    for (const id in PORTS) {
+      const P = PORTS[id];
+      st.ports[id] = { cond: P.cond, taken: !P.takenWith, companies: id === 'cherbourg' ? 6 : id === 'beaches' ? 2 : 0, scheldt: P.scheldt ? 0 : 100 };
+    }
+    st.bridges = BRIDGES.map(b => Object.assign({}, b, { state: 'enemy', done: 0 }));
     for (const s of SECTORS) {
       const startKm = LINES[s.id][1] + 5;
       const sec = {
@@ -105,6 +110,11 @@ const Sim = (() => {
 
   function sectorDef(id) { return SECTORS.find(s => s.id === id); }
 
+  // The first bridge on a link that trains can't cross yet (still German-held or blown)
+  function bridgeBlock(st, key) {
+    return st.bridges.find(b => b.link === key && b.state !== 'intact' && b.state !== 'rebuilt');
+  }
+
   // How far up the line trains can run: converted track to a captured, usable station
   function railheadIndex(st, sec) {
     const line = sectorDef(sec.id).line;
@@ -112,7 +122,7 @@ const Sim = (() => {
     while (i + 1 < line.length) {
       const key = linkKey(line[i], line[i + 1]);
       const n = st.nodes[line[i + 1]];
-      if (st.links[key].done < LINKS[key].len || !n.captured || n.cond <= 0) break;
+      if (st.links[key].done < LINKS[key].len || bridgeBlock(st, key) || !n.captured || n.cond <= 0) break;
       i++;
     }
     return i;
@@ -123,7 +133,10 @@ const Sim = (() => {
     const i = railheadIndex(st, sec);
     const line = sectorDef(sec.id).line, kms = LINES[sec.id];
     let laid = 0;
-    if (i + 1 < line.length) laid = Math.min(st.links[linkKey(line[i], line[i + 1])].done, Math.max(0, sec.front - kms[i]));
+    if (i + 1 < line.length) {
+      const key = linkKey(line[i], line[i + 1]), br = bridgeBlock(st, key);
+      laid = Math.min(st.links[key].done, Math.max(0, sec.front - kms[i]), br ? LINKS[key].len * br.at : Infinity);
+    }
     return { index: i, node: line[i], stationKm: kms[i], laid, km: kms[i] + laid };
   }
 
@@ -142,49 +155,85 @@ const Sim = (() => {
     return { supply: sec.trains, troop };
   }
 
-  // Trains the beachhead can load today: the beaches (cut by storms), Cherbourg once cleared, Antwerp once the Scheldt is clear
-  function landing(st) {
-    const beaches = LANDING.beaches * (st.storm > 0 ? LANDING.stormCut : 1);
-    const cherbourg = st.day >= LANDING.cherbourg.day ? LANDING.cherbourg.trains : 0;
-    const antwerp = st.antwerpClear === 0 ? LANDING.antwerp.trains : 0;
-    return { beaches, cherbourg, antwerp, total: Math.round(beaches + cherbourg + antwerp) };
+  // Trainloads each port lands today: its size x its condition, the beaches cut by storms; nothing until taken (and the Scheldt cleared)
+  function portTrains(st, id) {
+    const P = PORTS[id], ps = st.ports[id];
+    if (!ps.taken || ps.scheldt < 100) return 0;
+    return P.trains * ps.cond / 100 * (P.beach && st.storm > 0 ? STORM.cut : 1);
   }
 
-  function trainsToday(st) { return landing(st).total; }
+  function landing(st) {
+    const ports = {};
+    let total = 0;
+    for (const id in PORTS) { ports[id] = portTrains(st, id); total += ports[id]; }
+    return { ports, total: Math.round(total * 10) / 10 };
+  }
 
-  // Share the trains out where track or stations are the bottleneck
+  function trainsToday(st) { return Math.floor(landing(st).total + 1e-6); }
+
+  // Where a port's trains join a sector's line: its own node if the line passes it, or a named junction
+  const JOINS = { lehavre: { centre: 'paris' }, antwerp: { centre: 'liege' } };
+  function joinIndex(port, sec) {
+    const line = sectorDef(sec.id).line;
+    const at = (JOINS[port] && JOINS[port][sec.id]) || PORTS[port].node;
+    return line.indexOf(at);
+  }
+
+  // Share the landed trains out. Forward ports feed the sectors they reach first (a short haul), the beaches the rest;
+  // then the track and stations between each port and each railhead cap what gets through
   function allocateTrains(st) {
-    const want = {}, use = {};
+    const left = {}, entries = [];
     for (const sec of st.sectors) {
       const r = requested(st, sec);
-      want[sec.id] = r.supply + r.troop;
-      const rh = railheadIndex(st, sec);
-      const line = sectorDef(sec.id).line;
-      const res = [];
-      for (let i = 1; i <= rh; i++) {
-        res.push('L' + linkKey(line[i - 1], line[i]));
-        res.push('N' + line[i]);
-      }
-      use[sec.id] = res;
+      left[sec.id] = r.supply + r.troop;
     }
-    const cap = r => r[0] === 'L'
-      ? LINKS[r.slice(1)].cap
+    const pools = Object.keys(PORTS).filter(id => portTrains(st, id) > 0);
+    // Forward ports first: the furthest along the lines
+    const reach = id => Math.max(...st.sectors.map(sec => joinIndex(id, sec)));
+    pools.sort((a, b) => reach(b) - reach(a));
+    // The beaches and Cherbourg share one pool, as they land at the same place
+    const groups = [];
+    for (const id of pools) {
+      const g = groups.find(g => PORTS[g.ids[0]].node === PORTS[id].node && !JOINS[id] && !JOINS[g.ids[0]]);
+      if (g) { g.ids.push(id); g.cap += portTrains(st, id); } else groups.push({ ids: [id], cap: portTrains(st, id) });
+    }
+    for (const g of groups) {
+      const port = g.ids[0];
+      const users = st.sectors.filter(sec => {
+        const j = joinIndex(port, sec);
+        return j >= 0 && j <= railheadIndex(st, sec) && left[sec.id] > 1e-6;
+      });
+      const want = users.reduce((a, sec) => a + left[sec.id], 0);
+      if (!want) continue;
+      const share = Math.min(1, g.cap / want);
+      for (const sec of users) {
+        const amount = left[sec.id] * share;
+        left[sec.id] -= amount;
+        const line = sectorDef(sec.id).line, j = joinIndex(port, sec), rh = railheadIndex(st, sec);
+        const res = [];
+        if (JOINS[port] && JOINS[port][sec.id]) res.push('X' + port + '>' + sec.id);
+        for (let i = j + 1; i <= rh; i++) { res.push('L' + linkKey(line[i - 1], line[i])); res.push('N' + line[i]); }
+        entries.push({ sec: sec.id, ports: g.ids, amount, res });
+      }
+    }
+    const cap = r => r[0] === 'L' ? LINKS[r.slice(1)].cap
+      : r[0] === 'X' ? JUNCTION_CAP
       : NODES[r.slice(1)].cap * st.nodes[r.slice(1)].cond / 100;
-    const got = Object.assign({}, want);
-    let total = Object.values(got).reduce((a, b) => a + b, 0);
-    const today = trainsToday(st);
-    if (total > today) for (const id in got) got[id] *= today / total;
     for (let pass = 0; pass < 4; pass++) {
       const load = {};
-      for (const id in got) for (const r of use[id]) load[r] = (load[r] || 0) + got[id];
+      for (const e of entries) for (const r of e.res) load[r] = (load[r] || 0) + e.amount;
       for (const r in load) {
         const c = cap(r);
-        if (load[r] > c + 1e-6) {
-          const f = c / load[r];
-          for (const id in got) if (use[id].includes(r)) got[id] *= f;
-        }
+        if (load[r] > c + 1e-6) for (const e of entries) if (e.res.includes(r)) e.amount *= c / load[r];
       }
     }
+    const got = {}, from = {};
+    for (const sec of st.sectors) { got[sec.id] = 0; from[sec.id] = []; }
+    for (const e of entries) {
+      got[e.sec] += e.amount;
+      if (e.amount > 0.05) from[e.sec].push({ ports: e.ports, trains: e.amount });
+    }
+    got.from = from;
     return got;
   }
 
@@ -194,7 +243,7 @@ const Sim = (() => {
     const out = {};
     for (const sec of st.sectors) {
       const troop = requested(st, sec).troop;
-      out[sec.id] = { trains: got[sec.id], supplyTrains: Math.max(0, got[sec.id] - troop) };
+      out[sec.id] = { trains: got[sec.id], supplyTrains: Math.max(0, got[sec.id] - troop), from: got.from[sec.id] };
     }
     return out;
   }
@@ -310,16 +359,36 @@ const Sim = (() => {
       }
     }
 
-    // 2b. The Channel: storms close the beaches for a few days
+    // 2b. The Channel and the ports: storms, autumn wear on the beaches, port companies clearing wrecked harbours
     if (st.storm > 0) st.storm--;
-    else if (R() < LANDING.stormChance + st.day * LANDING.stormMore) {
+    else if (R() < STORM.chance + st.day * STORM.more) {
       st.storm = 2 + Math.floor(R() * 3);
-      rep.push(`🌊 Channel storm: the beaches can land only a quarter of their supplies for about ${st.storm} days.`);
+      st.ports.beaches.cond = Math.max(20, st.ports.beaches.cond - 8);
+      rep.push(`🌊 Channel storm: the beaches land a quarter of their supplies for about ${st.storm} days, and the Mulberry is damaged.`);
     }
-    if (st.day === LANDING.cherbourg.day) rep.push(`⚓ Cherbourg's wrecked harbour is cleared: ${LANDING.cherbourg.trains} more trains a day.`);
-    if (st.antwerpClear > 0) {
-      st.antwerpClear--;
-      if (st.antwerpClear === 0) rep.push(`⚓ The Scheldt is cleared: Antwerp opens, ${LANDING.antwerp.trains} more trains a day.`);
+    if (st.day >= BEACH_WEAR_DAY) st.ports.beaches.cond = Math.max(20, st.ports.beaches.cond - BEACH_WEAR * 100);
+    for (const id in PORTS) {
+      const P = PORTS[id], ps = st.ports[id];
+      if (!ps.taken && P.takenWith && st.nodes[P.takenWith].captured) {
+        ps.taken = true;
+        rep.push(`⚓ ${P.name} taken: harbour ${ps.cond < 30 ? 'wrecked' : 'damaged'} (${Math.round(ps.cond)}%)${P.scheldt ? ', and the Scheldt estuary is still mined and held by the Germans' : ''}. Send port companies.`);
+      }
+      if (!ps.taken || !ps.companies) continue;
+      let c = ps.companies;
+      if (ps.scheldt < 100) {
+        ps.scheldt = Math.min(100, ps.scheldt + c * SCHELDT_CLEAR);
+        if (ps.scheldt >= 100) rep.push(`⚓ The Scheldt is clear: ships can reach ${P.name}.`);
+        continue;
+      }
+      const before = ps.cond;
+      ps.cond = Math.min(100, ps.cond + c * PORT_CLEAR);
+      if (before < 100 && ps.cond >= 100) rep.push(`⚓ ${P.name} fully cleared: ${P.trains} trainloads a day.`);
+    }
+    // Clearing the Scheldt also takes fighting: the British & Canadians holding at Antwerp with ammo
+    const brit = st.sectors.find(x => x.id === 'north');
+    if (st.ports.antwerp.taken && st.ports.antwerp.scheldt < 100 && brit.posture === 'hold' && brit.stock.ammo >= needs(brit, 'advance').ammo) {
+      st.ports.antwerp.scheldt = Math.min(100, st.ports.antwerp.scheldt + SCHELDT_HOLD);
+      if (st.ports.antwerp.scheldt >= 100) rep.push('⚓ The British & Canadians have cleared the Scheldt: ships can reach Antwerp.');
     }
 
     // 3. Trains: troop trains first, the rest is supply
@@ -510,13 +579,22 @@ const Sim = (() => {
       if (b > 0 && rh + 1 < line.length) {
         const key = linkKey(line[rh], line[rh + 1]);
         const link = st.links[key];
-        const reach = Math.min(LINKS[key].len, Math.max(...st.sectors
+        const front = Math.min(LINKS[key].len, Math.max(...st.sectors
           .filter(s => sectorDef(s.id).line.includes(line[rh + 1]))
           .map(s => s.front - kms[rh])));
-        const left = Math.max(0, reach - link.done);
-        const useB = Math.min(b, left / CONVERT_KM);
-        link.done = Math.min(LINKS[key].len, link.done + useB * CONVERT_KM);
-        b -= useB;
+        for (let step = 0; step < 3 && b > 1e-6; step++) {
+          const br = bridgeBlock(st, key);
+          const reach = br ? Math.min(front, LINKS[key].len * br.at) : front;
+          const useB = Math.min(b, Math.max(0, reach - link.done) / CONVERT_KM);
+          link.done = Math.min(LINKS[key].len, link.done + useB * CONVERT_KM);
+          b -= useB;
+          // At a blown bridge: rebuild it
+          if (br && br.state === 'blown' && link.done >= LINKS[key].len * br.at - 0.01 && b > 1e-6) {
+            const w = Math.min(b, br.work - br.done);
+            br.done += w; b -= w;
+            if (br.done >= br.work - 1e-6) { br.state = 'rebuilt'; rep.push(`🌉 ${SECTOR_NAME(sec.id)}: ${br.river} bridge rebuilt, trains can cross.`); }
+          } else break;
+        }
       }
       if (b > 0) repair(100);
     }
@@ -539,9 +617,18 @@ const Sim = (() => {
       }
     }
 
-    if (st.antwerpClear === null && st.nodes[LANDING.antwerp.node].captured) {
-      st.antwerpClear = LANDING.antwerp.clear;
-      rep.push(`⚓ Antwerp taken with its docks intact, but the Scheldt estuary is still mined: about ${LANDING.antwerp.clear} days to clear it.`);
+    // Bridges the front has crossed: blown, unless it moved too fast for the demolition squads
+    for (const br of st.bridges) {
+      if (br.state !== 'enemy') continue;
+      for (const sec of st.sectors) {
+        const line = sectorDef(sec.id).line, [a1, b1] = br.link.split('|'), i = line.indexOf(a1);
+        if (i < 0 || line[i + 1] !== b1) continue;
+        if (sec.front < LINES[sec.id][i] + LINKS[br.link].len * br.at) continue;
+        const fast = sec.lastAdvance >= 20;
+        br.state = R() < BRIDGE_INTACT * (fast ? 2 : 1) ? 'intact' : 'blown';
+        rep.push(br.state === 'intact' ? `🌉 ${br.river} bridge taken intact by ${SECTOR_NAME(sec.id)}!` : `💥 ${br.river} bridge blown by the retreating Germans: ${br.work} battalion-days to rebuild.`);
+        break;
+      }
     }
 
     // 10. Intelligence: right most of the time
@@ -580,7 +667,7 @@ const Sim = (() => {
   }
 
   return {
-    landing, trainsToday,
+    landing, trainsToday, portTrains, bridgeBlock,
     LINES, LINKS, linkKey, newGame, endDay, needs, power, limits, railhead, railheadIndex, gap,
     truckCapacity, forecast, freePool, freeTrains, sendUnit, cancelUnit, dateText, sectorDef,
   };

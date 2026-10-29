@@ -65,7 +65,15 @@
   .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-height: 0; overflow: auto; }
   .box h2 { margin: 0 0 4px; font: 14px "Special Elite", monospace; }
   .box.report { flex: 1 1 0; min-height: 70px; }
-  .box.reserves { flex: 0 0 auto; max-height: 75%; }
+  .box.reserves { flex: 0 0 auto; max-height: 45%; }
+  .box.ports { flex: 0 0 auto; }
+  .port { padding: 2px 0; border-bottom: 1px dotted var(--line); font-size: 12px; }
+  .port.dim { opacity: .55; }
+  .port-top { display: flex; justify-content: space-between; gap: 6px; }
+  .port-mid { display: flex; align-items: center; gap: 6px; }
+  .port-mid .muted { flex: 1; font-size: 11px; }
+  .step.small button { width: 20px; height: 20px; font-size: 13px; }
+  .step.small b { min-width: 14px; font-size: 12px; }
   #report { margin: 0; padding-left: 0; list-style: none; font-size: 12px; line-height: 1.3; }
   #report li { padding: 1px 0; border-bottom: 1px dotted var(--line); }
   #report li.intel { color: var(--bad); font-weight: 600; }
@@ -232,7 +240,7 @@
       <span><i class="lg-track"></i>Repaired track</span>
       <span><i class="lg-broad"></i>Bombed track (repair to use)</span>
       <span><i class="lg-front"></i>Front line</span>
-      <span>⚑ Railhead · ■ big station · bar = condition · <b style="color:#a3291c">?</b> reported German build-up · hover a station for its stocks</span>
+      <span>🌉 bridge: red = blown, black = rebuilt · ⚑ Railhead · ■ big station · bar = condition · <b style="color:#a3291c">?</b> reported German build-up · hover a station for its stocks</span>
       <span id="unit-legend"></span>
     </div>
   </div>
@@ -240,6 +248,10 @@
     <div class="box report">
       <h2>Yesterday's report</h2>
       <ul id="report"></ul>
+    </div>
+    <div class="box ports">
+      <h2>⚓ Ports <span class="free" id="free-companies"></span> <span class="muted" style="font: 11px system-ui">port companies</span></h2>
+      <div id="ports"></div>
     </div>
     <div class="box reserves">
       <h2>Divisions at the beaches</h2>
@@ -269,7 +281,8 @@
     <p>August 1944. The Allies have broken out of Normandy. You run supply for three armies racing for Germany. The generals fight; <b>you decide what reaches them</b>. Take <b>Paris, Antwerp, Aachen and Metz</b> before the deadline. The real armies ran out of fuel in September: can you do better?</p>
     <div class="levels"><b>Difficulty</b> <span class="seg" id="level-seg"></span><div class="muted" id="level-note"></div></div>
     <ul>
-      <li>⚓ <b>Everything comes ashore</b> at the beaches: a limited number of trainloads a day. <b>Channel storms</b> cut that to a quarter for a few days. <b>Cherbourg</b> opens on day 9. <b>Antwerp</b> adds a lot, but only once taken <i>and</i> its estuary cleared, which takes weeks.</li>
+      <li>⚓ <b>Everything comes ashore</b>: the beaches and Mulberry, then ports. <b>Channel storms</b> cut the beaches to a quarter for a few days, and from September the weather wears them down. Ports arrive <b>wrecked</b>: put <b>port companies</b> on them (⚓ Ports panel) to clear them. <b>Le Havre</b> feeds the line at Rouen, <b>Antwerp</b> right at the front, but Antwerp is useless until the <b>Scheldt</b> is cleared: port companies, plus the British &amp; Canadians holding at Antwerp with ammo.</li>
+      <li>🌉 <b>Blown bridges</b>: the Germans blow the river bridges as they retreat. The railhead stops at a blown bridge until your engineers rebuild it, which takes many battalion-days. Move fast and you may take one intact.</li>
       <li>🚂 <b>Trains</b> run only on repaired track. Allied bombers wrecked the French railways before D-Day, so your trains stop where the repaired track ends: the <b>railhead</b>. That can be past the last station.</li>
       <li>🚚 <b>Trucks</b> carry supplies from the railhead to the front. The further the front gets ahead, the less they carry, and they burn fuel doing it.</li>
       <li>🛠️ <b>Engineers</b> repair track and stations: <b>🛤️ Track</b> pushes the railhead on, <b>Station 🚉</b> fixes stations first. The Germans wreck stations as they retreat: the faster you take them, the less damage.</li>
