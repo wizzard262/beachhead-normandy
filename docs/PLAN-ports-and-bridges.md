@@ -1,6 +1,6 @@
 # Plan: ports and blown bridges
 
-Steve's feedback on the first attempt: it plays the same as 1941 on a different map; where are the ports and the broken bridges? This plan makes them real choices. Work started on branch `ports-and-bridges` (not finished, not on `main`).
+Steve's feedback on the first attempt: it plays the same as 1941 on a different map; where are the ports and the broken bridges? This plan makes them real choices. **Done 2026-10-29 (v3):** built, drawn on the map, checked on screen, balanced. The numbers below were the first try; the final ones are in `js/data.js` and PROMPTS.md.
 
 ## Ports
 

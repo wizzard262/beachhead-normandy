@@ -37,8 +37,23 @@
 
 Bombing the reported build-ups doesn't help yet (it wins less than leaving things alone): something to look at.
 
+## 2. Ports and blown bridges
+
+- It looked like the same gameplay on a different map: what about all the ports and the broken bridges?
+- (Started without being asked, stopped, saved as a plan in [docs/PLAN-ports-and-bridges.md](docs/PLAN-ports-and-bridges.md), then: carry on with ports and bridges)
+- **Ports panel** (right-hand column): Beaches & Mulberry, Cherbourg, Le Havre, Antwerp, each with trainloads landed against its size, a cleared bar and its state. **8 port companies** to move between them with + and −
+  - Ports arrive wrecked: Cherbourg 15%, Le Havre 5% (falls with Rouen), Antwerp's docks 70%
+  - Forward ports join the railway near the front: Le Havre at Rouen and across to Paris, Antwerp at Antwerp and across to **Liège** (new station on US First Army's line)
+  - Antwerp lands nothing until the **Scheldt** is cleared: port companies, plus the British & Canadians holding at Antwerp with ammo
+  - Channel storms cut the beaches to a quarter and damage the Mulberry; from early September the weather wears the beaches down
+  - "N short" in red above the trains when fewer were landed than the sectors ask for
+- **Blown bridges**: nine river crossings drawn on the map (grey ahead, red ✕ when blown with an orange ring as it's rebuilt, black when working). The Germans blow them as they retreat (sometimes taken intact if you move fast); the railhead stops there until engineers rebuild it (16–44 battalion-days). The engineer note and adviser name the bridge and the work left
+- Hover a port or bridge on the map for its details
+- Balance (150 games each, leaving everything alone / holding and pushing well): Easy (22 Sep) 55% / 100%, Normal (19 Sep) 27% / 95–97%, Hard (15 Sep) 5% / 67%
+
 ## Sessions
 
 | # | Date | Length | What we did |
 |---|------|--------|-------------|
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
+| 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |

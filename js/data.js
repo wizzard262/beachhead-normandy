@@ -5,9 +5,9 @@ const LAST_DAY = 50;                         // 19 September 1944 (Normal; the b
 
 // Difficulty: the same campaign, a different deadline
 const DIFFICULTY = {
-  easy:   { name: 'Easy',   lastDay: 56, hint: 'Deadline 25 September. Leaving everything alone wins about half the time' },
-  normal: { name: 'Normal', lastDay: 50, hint: 'Deadline 19 September. Leaving everything alone wins about a third of the time' },
-  hard:   { name: 'Hard',   lastDay: 42, hint: 'Deadline 11 September. Leaving everything alone wins about a quarter of the time' },
+  easy:   { name: 'Easy',   lastDay: 53, hint: 'Deadline 22 September. Leaving everything alone wins about half the time' },
+  normal: { name: 'Normal', lastDay: 50, hint: 'Deadline 19 September. Leaving everything alone wins about a quarter of the time' },
+  hard:   { name: 'Hard',   lastDay: 46, hint: 'Deadline 15 September. Leaving everything alone rarely wins: clear ports, rebuild bridges, hold and push' },
 };
 
 // What you have each day. Supply comes ashore over the beaches and through captured ports (see PORTS)
@@ -19,7 +19,7 @@ const TRAIN_TONS = 450;         // one supply train
 const TRUCK_TONS = 300;         // one truck column, one trip
 const TRUCK_KM_PER_DAY = 250;   // there and back counts double
 const TRUCK_FUEL = 0.0005;      // tons of fuel burnt per ton carried per km
-const CONVERT_KM = 4;           // bombed track repaired per engineer battalion per day (the bridges take longer: see BRIDGES)
+const CONVERT_KM = 2.6;           // bombed track repaired per engineer battalion per day (the bridges take longer: see BRIDGES)
 const REPAIR = 6;               // station condition repaired per battalion per day
 const BOMBER_FUEL = 25;         // tons per bomber group per day, from the sector's depot
 const BOMBER_LOSS = 0.02;       // chance a group is lost on each day's sorties
@@ -37,7 +37,7 @@ const PORTS = {
                hint: 'Docks taken almost intact, but useless until the Scheldt estuary is cleared. Its trains join the line at Antwerp, right at the front' },
 };
 const PORT_COMPANIES = 8;        // port clearance companies to share between the ports
-const PORT_CLEAR = 1;            // port condition cleared per company per day (%)
+const PORT_CLEAR = 0.6;            // port condition cleared per company per day (%)
 const SCHELDT_CLEAR = 1.2;       // Scheldt cleared per company per day (%)
 const SCHELDT_HOLD = 5;          // ... plus this much a day while the British & Canadians hold at Antwerp with ammo in hand
 const STORM = { chance: 0.04, more: 0.002, cut: 0.25 };   // chance a Channel storm blows up each day (rising), and what the beaches keep

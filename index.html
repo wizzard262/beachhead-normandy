@@ -61,11 +61,11 @@
   .lg-broad { width: 22px; height: 0; border-top: 3px dashed rgba(120,40,30,.7); }
   .lg-front { width: 22px; height: 4px; background: rgba(150,35,25,.85); }
 
-  #side { flex: 0 0 320px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  #side { flex: 0 0 320px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; }
   .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-height: 0; overflow: auto; }
   .box h2 { margin: 0 0 4px; font: 14px "Special Elite", monospace; }
-  .box.report { flex: 1 1 0; min-height: 70px; }
-  .box.reserves { flex: 0 0 auto; max-height: 45%; }
+  .box.report { flex: 1 1 0; min-height: 48px; }
+  .box.reserves { flex: 1.4 1 0; min-height: 60px; }
   .box.ports { flex: 0 0 auto; }
   .port { padding: 2px 0; border-bottom: 1px dotted var(--line); font-size: 12px; }
   .port.dim { opacity: .55; }
@@ -96,6 +96,7 @@
   .brow.head > span { white-space: nowrap; }
   .free { display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 9px; background: rgba(40,30,15,.08); font-weight: 600; }
   .free.have { background: var(--good); color: #fff; }
+  .free.short { background: var(--bad); color: #fff; }
   .card { background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--sec); border-radius: 8px; padding: 6px 10px; margin-bottom: 6px; row-gap: 3px; }
   .c-name { grid-row: span 2; display: grid; grid-template-columns: auto auto; justify-content: space-between; align-content: start; gap: 3px 6px; }
   .c-name > :not(.forces) { grid-column: 1; }
@@ -221,7 +222,7 @@
     <button id="new-btn">New game</button>
     <a href="prompts.html" target="_blank" rel="noopener">prompts</a>
     <a href="screenshots.html" target="_blank" rel="noopener">screenshots</a>
-    <span id="ver">v1</span>
+    <span id="ver">v3</span>
   </div>
 </header>
 
@@ -307,10 +308,10 @@
   </div>
 </div>
 
-<script src="js/data.js?v=1"></script>
-<script src="js/sim.js?v=1"></script>
-<script src="js/draw.js?v=1"></script>
-<script src="js/ui.js?v=1"></script>
-<script src="js/main.js?v=1"></script>
+<script src="js/data.js?v=3"></script>
+<script src="js/sim.js?v=3"></script>
+<script src="js/draw.js?v=3"></script>
+<script src="js/ui.js?v=3"></script>
+<script src="js/main.js?v=3"></script>
 </body>
 </html>

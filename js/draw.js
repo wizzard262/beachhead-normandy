@@ -99,9 +99,7 @@ const Draw = (() => {
     const ch = px(0.22, 0.02);
     g.fillText('E n g l i s h   C h a n n e l', ch.x, ch.y);
     // Cherbourg, the first big port, at the tip of the peninsula
-    const cb = px(-0.03, 0.06);
-    g.fillStyle = '#2b2418'; g.font = 'bold 12px Georgia, serif';
-    g.fillText('⚓ Cherbourg', cb.x - 10, cb.y);
+
     // Bocage: hedgerow country round Saint-Lô and Avranches
     g.strokeStyle = 'rgba(80,105,60,.35)'; g.lineWidth = 1;
     for (let i = 0; i < 70; i++) {
@@ -186,6 +184,68 @@ const Draw = (() => {
       if (f < 1) {
         ctx.fillStyle = '#c47a1a';
         ctx.beginPath(); ctx.arc(mx, my, 4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // Where each port's anchor sits on the map (Antwerp at its station)
+  function portSpot(id) {
+    if (id === 'cherbourg') return px(-0.035, 0.07);
+    if (id === 'lehavre') return px(0.25, 0.165);
+    if (id === 'antwerp') { const a = P.antwerp; return { x: a.x - 34, y: a.y + 4 }; }
+    return null;
+  }
+
+  // Each port: an anchor, its name and a bar of how cleared it is; Le Havre's trains run to Rouen
+  function drawPorts(st) {
+    for (const id of ['cherbourg', 'lehavre', 'antwerp']) {
+      const p = portSpot(id), ps = st.ports[id], PT = PORTS[id];
+      if (id === 'lehavre') {
+        ctx.strokeStyle = 'rgba(43,36,24,.45)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(p.x + 6, p.y + 2); ctx.lineTo(P.rouen.x - 8, P.rouen.y - 2); ctx.stroke(); ctx.setLineDash([]);
+      }
+      ctx.fillStyle = ps.taken ? '#f4ead2' : '#e9c6b8'; ctx.strokeStyle = ps.taken ? '#2b2418' : '#8a2a1e'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.font = '11px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('⚓', p.x, p.y + 0.5); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      if (id !== 'antwerp') { ctx.fillStyle = '#2b2418'; ctx.font = 'bold 12px Georgia, serif'; ctx.fillText(PT.name, p.x + 12, p.y - 4); }
+      if (!ps.taken) continue;
+      // Cleared bar, and the Scheldt still to clear for Antwerp
+      const c = ps.scheldt < 100 ? ps.scheldt : ps.cond;
+      ctx.fillStyle = 'rgba(40,30,15,.25)'; ctx.fillRect(p.x - 12, p.y + 12, 24, 4);
+      ctx.fillStyle = ps.scheldt < 100 ? '#2f5d8a' : c > 66 ? '#3f7a3a' : c > 33 ? '#c47a1a' : '#a3291c';
+      ctx.fillRect(p.x - 12, p.y + 12, 24 * c / 100, 4);
+      if (ps.scheldt < 100) { ctx.fillStyle = '#2f5d8a'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.fillText('Scheldt mined', p.x - 30, p.y + 26); }
+    }
+  }
+
+  // Where a bridge sits: part way along its link
+  function bridgeSpot(br) {
+    const L = Sim.LINKS[br.link], a = P[L.a], b = P[L.b];
+    return { x: a.x + (b.x - a.x) * br.at, y: a.y + (b.y - a.y) * br.at, ang: Math.atan2(b.y - a.y, b.x - a.x) };
+  }
+
+  // A bridge across the line: grey ahead of the front, red and broken when blown (with work done so far), black once working
+  function drawBridges(st) {
+    for (const br of st.bridges) {
+      const p = bridgeSpot(br);
+      const col = br.state === 'enemy' ? 'rgba(90,80,70,.6)' : br.state === 'blown' ? '#a3291c' : '#2b2418';
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.ang);
+      ctx.fillStyle = '#efe3c4'; ctx.fillRect(-10, -6, 20, 12);
+      ctx.strokeStyle = col; ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (br.state === 'blown') { ctx.moveTo(-9, -5); ctx.lineTo(-2, -5); ctx.moveTo(2, -5); ctx.lineTo(9, -5); ctx.moveTo(-9, 5); ctx.lineTo(-2, 5); ctx.moveTo(2, 5); ctx.lineTo(9, 5); }
+      else { ctx.moveTo(-9, -5); ctx.lineTo(9, -5); ctx.moveTo(-9, 5); ctx.lineTo(9, 5); }
+      ctx.moveTo(-9, -5); ctx.lineTo(-12, -8); ctx.moveTo(9, -5); ctx.lineTo(12, -8); ctx.moveTo(-9, 5); ctx.lineTo(-12, 8); ctx.moveTo(9, 5); ctx.lineTo(12, 8);
+      ctx.stroke();
+      ctx.restore();
+      if (br.state === 'blown') {
+        // Rebuilding progress as a ring
+        ctx.strokeStyle = 'rgba(40,30,15,.2)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI * 2); ctx.stroke();
+        if (br.done > 0) { ctx.strokeStyle = '#c47a1a'; ctx.beginPath(); ctx.arc(p.x, p.y, 13, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * br.done / br.work); ctx.stroke(); }
+        ctx.fillStyle = '#a3291c'; ctx.font = 'bold 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('✕', p.x, p.y + 0.5); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
       }
     }
   }
@@ -395,6 +455,13 @@ const Draw = (() => {
     return { x: p.x - 60, y: p.y + 8, w: 100, h: 6 + ROW_H * UNIT_ORDER.length };
   }
 
+  function portBridgeBoxes(st) {
+    const out = [];
+    for (const id of ['cherbourg', 'lehavre', 'antwerp']) { const p = portSpot(id); out.push({ x: p.x - 14, y: p.y - 14, w: id === 'antwerp' ? 28 : 90, h: 44 }); }
+    for (const br of st.bridges) { const p = bridgeSpot(br); out.push({ x: p.x - 14, y: p.y - 14, w: 28, h: 28 }); }
+    return out;
+  }
+
   // Everything a badge must not cover: each station and its name, and the reserves
   function stationBoxes() {
     const boxes = [reserveBox()];
@@ -436,7 +503,7 @@ const Draw = (() => {
   // Score spots for each badge on its own (stations, flags, distance), keep the best few for each,
   // then pick the best combination of three: no overlaps, no hidden tails, North above Centre above South
   function findPlaces(st) {
-    const stations = stationBoxes().concat(flagBoxes(st));
+    const stations = stationBoxes().concat(flagBoxes(st), portBridgeBoxes(st));
     const tries = [];
     for (let dx = -270; dx <= 150; dx += 30) {
       for (let dy = -200; dy <= 200; dy += 20) tries.push({ dx, dy });
@@ -530,12 +597,16 @@ const Draw = (() => {
     ctx.closePath(); ctx.fill();
   }
 
+  let bridgesNow = [];
   function render(st, opts) {
+    bridgesNow = st.bridges;
     opts = opts || {};
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.drawImage(paper, 0, 0, W, H);
     drawFront(st);
     for (const key in Sim.LINKS) drawLink(st, key);
+    drawBridges(st);
+    drawPorts(st);
     // Last day's German attacks and the reported build-up
     for (const id of st.events.attacks || []) {
       const p = along(id, st.sectors.find(s => s.id === id).front);
@@ -594,6 +665,9 @@ const Draw = (() => {
   function hit(clientX, clientY) {
     const r = canvas.getBoundingClientRect();
     const x = (clientX - r.left) / r.width * W, y = (clientY - r.top) / r.height * H;
+    for (const id of ['cherbourg', 'lehavre']) { const p = portSpot(id); if (Math.hypot(p.x - x, p.y - y) < 12) return 'port:' + id; }
+    { const p = portSpot('antwerp'); if (Math.hypot(p.x - x, p.y - y) < 10) return 'port:antwerp'; }
+    for (let k = 0; k < bridgesNow.length; k++) { const p = bridgeSpot(bridgesNow[k]); if (Math.hypot(p.x - x, p.y - y) < 12) return 'bridge:' + k; }
     for (const id in P) if (Math.hypot(P[id].x - x, P[id].y - y) < 16) return id;
     const b = reserveBox();
     if (x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h) return 'beaches';

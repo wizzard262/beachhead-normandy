@@ -345,11 +345,11 @@ const UI = (() => {
   function sourceNode(sec) {
     const fc = window.Game.forecast[sec.id] || { from: [] };
     const from = (fc.from || []).slice().sort((a, b) => b.trains - a.trains);
-    const name = ids => ids.map(id => id === 'beaches' ? 'Beaches' : PORTS[id].name).join(' + ');
+    const name = ids => ids.map(id => id === 'beaches' ? 'Beaches' : PORTS[id].name).join(' + ').replace('Beaches + Cherbourg', 'Beaches');
     const main = from.length ? name(from[0].ports) : 'Beaches';
     const lines = from.map(x => `${name(x.ports)}: ${x.trains.toFixed(1)}`).join('\n');
     const storm = st.storm > 0 && from.some(x => x.ports.includes('beaches'));
-    return `<div class="pipe-node" title="Where this sector's trains are landed today\n${lines}"><b>⚓ ${main}</b>${from.length > 1 ? `<small>+ ${name(from.slice(1).flatMap(x => x.ports))}</small>` : ''}${storm ? '<small class="warn">🌊 storm</small>' : '<small>landing</small>'}</div>`;
+    return `<div class="pipe-node" title="Where this sector's trains are landed today\n${lines}"><b>${main}</b>${from.length > 1 ? `<small>+ ${name(from.slice(1).flatMap(x => x.ports))}</small>` : ''}${storm ? '<small class="warn">🌊 storm</small>' : '<small>⚓ landing</small>'}</div>`;
   }
 
   // How far the front still has to go to the next station on its line
@@ -362,8 +362,11 @@ const UI = (() => {
 
   function freeBadge(id, n) {
     const e = $(id);
-    e.textContent = n + ' free';
+    // More trains asked for than were landed (a storm, a port lost): say how many short
+    e.textContent = n < 0 ? `${-n} short` : n + ' free';
+    e.title = n < 0 ? 'Fewer trains were landed than the sectors ask for: each sector gets a share. Lower some, or clear more ports' : '';
     e.classList.toggle('have', n > 0);
+    e.classList.toggle('short', n < 0);
   }
 
   function update() {
@@ -481,6 +484,28 @@ const UI = (() => {
   function tooltip(id, x, y) {
     const tip = $('#tip');
     if (!id) { tip.hidden = true; return; }
+    const place = html => {
+      tip.innerHTML = html; tip.hidden = false;
+      tip.style.left = Math.min(x + 14, window.innerWidth - 270) + 'px';
+      tip.style.top = Math.min(y + 14, window.innerHeight - 120) + 'px';
+    };
+    if (id.startsWith('port:')) {
+      const pid = id.slice(5), P = PORTS[pid], ps = st.ports[pid];
+      const lines = [`<b>⚓ ${P.name}</b>`, P.hint];
+      if (!ps.taken) lines.push(`Not taken yet: falls with ${NODES[P.takenWith].name}`);
+      else {
+        lines.push(`Lands <b>${Sim.portTrains(st, pid).toFixed(1)}</b> of ${P.trains} trainloads a day · harbour ${Math.round(ps.cond)}% cleared`);
+        if (ps.scheldt < 100) lines.push(`Scheldt ${Math.round(ps.scheldt)}% clear: nothing lands until it's 100%`);
+        lines.push(`${ps.companies} port compan${ps.companies === 1 ? 'y' : 'ies'} working (⚓ Ports panel)`);
+      }
+      return place(lines.join('<br>'));
+    }
+    if (id.startsWith('bridge:')) {
+      const br = st.bridges[+id.slice(7)], L = Sim.LINKS[br.link];
+      const where = `${br.river} bridge, ${NODES[L.a].name} – ${NODES[L.b].name}`;
+      const state = { enemy: 'Behind German lines: it will probably be blown as they retreat', blown: `Blown: ${Math.round(br.done)} of ${br.work} battalion-days rebuilt. Trains stop here until it's done`, intact: 'Taken intact: trains can cross', rebuilt: 'Rebuilt: trains can cross' }[br.state];
+      return place(`<b>🌉 ${where}</b><br>${state}`);
+    }
     const n = st.nodes[id], N = NODES[id];
     const lines = [`<b>${N.name}</b>${OBJECTIVES.includes(id) ? ' 🎯 objective' : ''}`];
     if (id === 'beaches') {
