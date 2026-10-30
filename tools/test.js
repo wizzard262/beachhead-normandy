@@ -6,7 +6,7 @@ load('data.js'); load('sim.js');
 
 // Fingerprint of 30 full games per strategy below. It changes only when the rules or numbers change.
 // After a deliberate rules change, run the tests and paste the new value it prints here
-const FINGERPRINT = 'bdad1802';
+const FINGERPRINT = '5c0868a0';
 
 let failed = 0;
 function check(name, fn) {

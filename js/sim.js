@@ -251,13 +251,13 @@ const Sim = (() => {
     const cap = r => r[0] === 'L' ? LINKS[r.slice(1)].cap
       : r[0] === 'X' ? JUNCTION_CAP
       : NODES[r.slice(1)].cap * st.nodes[r.slice(1)].cond / 100;
-    for (let pass = 0; pass < 4; pass++) {
-      const load = {};
-      for (const e of entries) for (const r of e.res) load[r] = (load[r] || 0) + e.amount;
-      for (const r in load) {
-        const c = cap(r);
-        if (load[r] > c + 1e-6) for (const e of entries) if (e.res.includes(r)) e.amount *= c / load[r];
-      }
+    // Each flow is cut once, by the tightest track or station on its way (cutting it at every full one cut it twice)
+    const load = {};
+    for (const e of entries) for (const r of e.res) load[r] = (load[r] || 0) + e.amount;
+    for (const e of entries) {
+      let keep = 1;
+      for (const r of e.res) if (load[r] > cap(r) + 1e-6) keep = Math.min(keep, cap(r) / load[r]);
+      e.amount *= keep;
     }
     const got = {}, from = {};
     for (const sec of st.sectors) { got[sec.id] = 0; from[sec.id] = []; }

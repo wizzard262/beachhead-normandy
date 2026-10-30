@@ -151,6 +151,13 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - Assumption: 4:1 stays the most fuel a train can carry (no all-fuel button)
 - New browser checks: `node tools/advice.js` (game served on port 8767)
 
+## 18. Trains cut twice on a full line (rules fix)
+
+- Found while checking prompt 17: when a train's way had two full parts (the beaches–Saint-Lô track and Saint-Lô station), its trains were cut at each, so Saint-Lô passed 6 a day instead of 8
+- Steve chose: fix it. Each flow is now cut once, by the tightest track or station on its way
+- Balance sweep (150 games per strategy) before → after, normal level: pulse 73% → 69%, build4 58% → 56%, Red Ball only 81% → 83%, rest only 95% → 94%, idle 0% → 0%. Easy and hard much the same; leaving everything alone still loses
+- New test fingerprint `5c0868a0`
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -158,4 +165,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 45 min | Prompt 17: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts |
+| 4 | 2026-10-30 | about 60 min | Prompts 17–18: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line |
