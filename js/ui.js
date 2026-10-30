@@ -603,17 +603,11 @@ const UI = (() => {
       res.append(row);
     }
 
-    // Yesterday's report
+    // Yesterday's report: every line, recon first
     const rep = $('#report');
     rep.textContent = '';
     const lines = (st.intel ? [st.intel.text] : []).concat(st.report);
-    const showAll = rep.dataset.all === String(st.day);
-    lines.slice(0, showAll ? lines.length : 2).forEach((line, k) => rep.append(el('li', k === 0 && st.intel ? 'intel' : '', line)));
-    if (lines.length > 2 && !showAll) {
-      const more = el('li', 'more', `+ ${lines.length - 2} more`);
-      more.onclick = () => { rep.dataset.all = String(st.day); update(); };
-      rep.append(more);
-    }
+    lines.forEach((line, k) => rep.append(el('li', k === 0 && st.intel ? 'intel' : '', line)));
 
     $('#end-btn').disabled = st.won || st.lost;
     faceRight(document.body);

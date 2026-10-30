@@ -230,6 +230,12 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - Port links are now smooth curves (still clear of the Seine and the Meuse)
 - prompts.html (this page) now uses the whole window width; long table headings, code and links wrap instead of scrolling sideways. Checked at 1600, 1100 and 390 px wide: no sideways scroll. The same change is in Railhead
 
+## 28. Yesterday's report lists everything
+
+- Steve: don't close yesterday's report, list all
+- The report used to show 2 lines and a "+ N more" link; it now lists every line, recon first. (Railhead already listed everything)
+- New check: a 5-line report shows all 5 lines and no "more" link
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -237,4 +243,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 150 min | Prompts 17–27: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump; port links drawn; strength vs the Germans; smooth port links, prompts page full width |
+| 4 | 2026-10-30 | about 155 min | Prompts 17–28: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump; port links drawn; strength vs the Germans; smooth port links, prompts page full width; full report |

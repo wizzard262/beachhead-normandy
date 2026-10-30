@@ -114,6 +114,15 @@ function check(name, ok, detail) {
   });
   check('each army shows us vs the Germans, speed and brake', strength.length === 3 && strength.every(x => /⚔️ \d+ vs \d+\d* km\/d · (supply|Germans|road speed)/.test(x)), JSON.stringify(strength));
 
+  // Yesterday's report lists every line, never "+ N more"
+  const report = await page.evaluate(() => {
+    Game.restart();
+    Game.state.report = ['one', 'two', 'three', 'four', 'five'];
+    UI.update();
+    return [...document.querySelectorAll('#report li')].map(li => li.textContent);
+  });
+  check('report lists every line', report.length === 5 && !report.some(x => x.includes('more')), JSON.stringify(report));
+
   check('no errors on the page', errors.length === 0, errors.join('\n'));
   console.log(failed ? `\n${failed} failed` : '\nall passed');
   await browser.close();
