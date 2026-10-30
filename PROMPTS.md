@@ -130,6 +130,12 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - The repo was made public for this (free GitHub Pages needs a public repo); its whole history was checked first: no passwords or secrets
 - Live at https://wizzard262.github.io/railhead-normandy/. The old harriercarrier.com address now shows the site's "not found" page
 
+## 16. Repo and address renamed
+
+- Rename the repo and its address from railhead to beachhead: GitHub repo `wizzard262/railhead-normandy` is now `wizzard262/beachhead-normandy`
+- Live at https://wizzard262.github.io/beachhead-normandy/. The old address shows a GitHub 404 (Steve chose no forwarding; nothing is left under the old name)
+- harriercarrier.com home page banner and portfolio links point to the new address
+
 ## Sessions
 
 | # | Date | Length | What we did |
