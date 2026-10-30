@@ -104,6 +104,11 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - When a port reaches 100%, take its port companies off automatically: they go back to the free pool, and the report says so
 - The game now starts with 2 companies free (the beaches start at 100%, so none are put there)
 
+## 12. Days ahead or behind history
+
+- On the result screen, show how each objective compares with the real campaign as days ahead or behind (e.g. "+9 days ahead", "−2 days behind", "the same day") instead of "you: day 34"
+- Objectives not taken still show only the real date
+
 ## Sessions
 
 | # | Date | Length | What we did |

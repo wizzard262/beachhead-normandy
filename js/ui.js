@@ -579,9 +579,27 @@ const UI = (() => {
     tip.style.top = Math.min(y + 14, window.innerHeight - 120) + 'px';
   }
 
+  // How far ahead of or behind the real date an objective was taken, e.g. " · you: +9 days ahead"
+  function versusHistory(h) {
+    // The objective's state in this game
+    const node = st.nodes[h.node];
+    // Not taken: nothing to compare
+    if (!node.captured || !node.day) return '';
+    // Positive = taken before the real date
+    const gap = h.day - node.day;
+    // Same day as history
+    if (gap === 0) return ' · you: <b>the same day</b>';
+    // "day" or "days"
+    const days = Math.abs(gap) === 1 ? 'day' : 'days';
+    // Ahead of history
+    if (gap > 0) return ` · you: <b>+${gap} ${days} ahead</b>`;
+    // Behind history
+    return ` · you: <b>−${-gap} ${days} behind</b>`;
+  }
+
   function result() {
     const box = $('#result-text');
-    const history = HISTORY.map(h => `<li>${h.text}${st.nodes[h.node].captured && st.nodes[h.node].day ? ` · you: day ${st.nodes[h.node].day}` : ''}</li>`).join('');
+    const history = HISTORY.map(h => `<li>${h.text}${versusHistory(h)}</li>`).join('');
     if (st.won) {
       const d = st.wonDay;
       box.innerHTML = `<h2>🏆 Objectives taken</h2><p>Paris, Antwerp, Aachen and Metz are all in Allied hands on <b>${Sim.dateText(d)}</b>, day ${d} of ${st.lastDay} on ${DIFFICULTY[st.level].name}. You beat history.</p><p>The real campaign:</p><ul>${history}</ul>`;
