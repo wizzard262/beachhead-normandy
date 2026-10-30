@@ -226,7 +226,8 @@ const Sim = (() => {
   function trainsToday(st) { return Math.floor(landing(st).total + 1e-6); }
 
   // Where a port's trains join a sector's line: its own node if the line passes it, or a named junction
-  const JOINS = { lehavre: { centre: 'paris' }, antwerp: { centre: 'liege' } };
+  const JOINS = {};
+  for (const L of PORT_LINKS) JOINS[L.port] = Object.assign(JOINS[L.port] || {}, { [L.sector]: L.at });
   function joinIndex(port, sec) {
     const line = sectorDef(sec.id).line;
     const at = (JOINS[port] && JOINS[port][sec.id]) || PORTS[port].node;

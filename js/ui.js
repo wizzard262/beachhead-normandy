@@ -618,6 +618,10 @@ const UI = (() => {
     }
     const n = st.nodes[id], N = NODES[id];
     const lines = [`<b>${N.name}</b>${OBJECTIVES.includes(id) ? ' 🎯 objective' : ''}`];
+    // A port link joins here: say whose trains and when
+    for (const L of PORT_LINKS.filter(L => L.at === id)) {
+      lines.push(`⚓ ${PORTS[L.port].name}'s trains join ${Sim.sectorDef(L.sector).name}'s line here (${L.name}, up to ${JUNCTION_CAP} a day) once ${PORTS[L.port].name} is open and the railhead reaches ${N.name}`);
+    }
     if (id === 'beaches') {
       const L = Sim.landing(st);
       lines.push(`Supplies landed today: <b>${L.total.toFixed(1)}</b> trainloads${st.storm > 0 ? ' · 🌊 storm' : ''}`);

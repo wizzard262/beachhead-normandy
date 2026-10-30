@@ -63,6 +63,7 @@
   .legend { flex: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; font-size: 12px; color: var(--muted); margin: 4px 2px 0; }
   .legend i { display: inline-block; vertical-align: middle; margin-right: 4px; }
   .lg-track { width: 22px; height: 4px; background: #eef4ff; box-shadow: 0 0 0 3px #2a5f9a; }
+  .lg-portlink { width: 22px; height: 0; border-top: 2px dashed rgba(238,244,255,.6); box-shadow: 0 0 0 3px #2a5f9a; }
   .lg-broad { width: 22px; height: 0; border-top: 3px dashed rgba(255,190,170,.95); box-shadow: 0 0 0 3px #2a5f9a; }
   .bridge-icon { vertical-align: middle; margin-right: 3px; }
   .lg-front { width: 22px; height: 4px; background: rgba(255,95,80,.95); box-shadow: 0 0 0 3px #2a5f9a; }
@@ -240,7 +241,7 @@
     <button id="new-btn">New game</button>
     <a href="prompts.html" target="_blank" rel="noopener">prompts</a>
     <a href="screenshots.html" target="_blank" rel="noopener">screenshots</a>
-    <span id="ver">v26</span>
+    <span id="ver">v27</span>
   </div>
 </header>
 
@@ -258,6 +259,7 @@
     <div class="legend">
       <span><i class="lg-track"></i>Repaired track</span>
       <span><i class="lg-broad"></i>Bombed track (repair to use)</span>
+      <span title="A forward port's trains run across to US First Army's line: Le Havre via Rouen to Paris, Antwerp to Liège. Solid once it carries trains"><i class="lg-portlink"></i>Port link</span>
       <span><i class="lg-front"></i>Front line</span>
       <span id="bridge-legend"></span><span>⚑ Railhead · bar = condition · <b style="color:#a3291c">?</b> reported German build-up · hover a station for its stocks</span>
       <span id="unit-legend"></span>
@@ -300,7 +302,7 @@
     <p>August 1944. The Allies have broken out of Normandy. You run supply for three armies racing for Germany. The generals fight; <b>you decide what reaches them</b>. Take <b>Antwerp, Aachen and Metz</b> before the deadline (US First Army passes through Paris on its way to Aachen). The real armies ran out of fuel in September: can you do better?</p>
     <div class="levels"><b>Difficulty</b> <span class="seg" id="level-seg"></span><div class="muted" id="level-note"></div></div>
     <ul>
-      <li>⚓ <b>Everything comes ashore</b>: the beaches and Mulberry, then ports. <b>Channel storms</b> cut the beaches to a quarter for a few days, and from September the weather wears them down. Ports arrive <b>wrecked</b>: put <b>port companies</b> on them (⚓ Ports panel) to clear them. <b>Le Havre</b> feeds the line at Rouen, <b>Antwerp</b> right at the front, but Antwerp is useless until the <b>Scheldt</b> is cleared: port companies, plus the British &amp; Canadians holding at Antwerp with ammo.</li>
+      <li>⚓ <b>Everything comes ashore</b>: the beaches and Mulberry, then ports. <b>Channel storms</b> cut the beaches to a quarter for a few days, and from September the weather wears them down. Ports arrive <b>wrecked</b>: put <b>port companies</b> on them (⚓ Ports panel) to clear them. <b>Le Havre</b> feeds the line at Rouen, <b>Antwerp</b> right at the front, but Antwerp is useless until the <b>Scheldt</b> is cleared: port companies, plus the British &amp; Canadians holding at Antwerp with ammo. Forward ports also feed US First Army along a <b>port link</b>: Le Havre's trains via Rouen to Paris, Antwerp's to Liège, once its railhead gets there.</li>
       <li>🌉 <b>Blown bridges</b>: the Germans blow the river bridges as they retreat. The railhead stops at a blown bridge until your engineers rebuild it, which takes many battalion-days. Move fast and you may take one intact.</li>
       <li>🚂 <b>Trains</b> run only on repaired track. Allied bombers wrecked the French railways before D-Day, so your trains stop where the repaired track ends: the <b>railhead</b>. That can be past the last station. Each line takes only so many trains a day (shown as <b>line takes</b>); you can't send more, and any extra go back to the pool at the start of the day.</li>
       <li>🔧 <b>Trucks wear out.</b> Each army's columns lose condition as they drive, and worn trucks carry less. Columns you take off an army <b>rest</b> and recover; put rested ones back on. The 🔴 <b>Red Ball</b> button gives one army one-way roads: its trucks go much further but wear faster, and the other armies' trucks carry less.</li>
@@ -329,10 +331,10 @@
   </div>
 </div>
 
-<script src="js/data.js?v=26"></script>
-<script src="js/sim.js?v=26"></script>
-<script src="js/draw.js?v=26"></script>
-<script src="js/ui.js?v=26"></script>
-<script src="js/main.js?v=26"></script>
+<script src="js/data.js?v=27"></script>
+<script src="js/sim.js?v=27"></script>
+<script src="js/draw.js?v=27"></script>
+<script src="js/ui.js?v=27"></script>
+<script src="js/main.js?v=27"></script>
 </body>
 </html>

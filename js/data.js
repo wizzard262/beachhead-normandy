@@ -71,6 +71,12 @@ const BRIDGES = [
   { link: 'verdun|metz',       at: 0.92, river: 'Moselle', work: 40 },
 ];
 const JUNCTION_CAP = 8;          // trains a day a forward port can send across to another army's line (Antwerp → Liège, Le Havre → Paris)
+// Port links: a forward port's trains run across to another army's line on a line of their own
+// (Le Havre up the Seine valley from Rouen to Paris, Antwerp to Liège). They join at `at` once that army's railhead reaches it
+const PORT_LINKS = [
+  { port: 'lehavre', sector: 'centre', from: 'rouen', at: 'paris', name: 'Seine valley line' },
+  { port: 'antwerp', sector: 'centre', from: 'antwerp', at: 'liege', name: 'Antwerp – Liège line' },
+];
 const BRIDGE_INTACT = 0.15;      // chance the Germans fail to blow a bridge when the front crosses it fast
 
 // What engineers do first: repair stations up to repairFirst %, then repair track, then repair the rest

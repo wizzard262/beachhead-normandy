@@ -270,6 +270,23 @@ const Draw = (() => {
     }
   }
 
+  // Port links (see PORT_LINKS): faint and dashed until they carry trains, then solid like working track
+  function drawPortLinks(st) {
+    const fc = (window.Game && window.Game.forecast) || {};
+    for (const L of PORT_LINKS) {
+      const a = P[L.from], b = P[L.at];
+      // In use: today some of that army's trains come from this port
+      const from = (fc[L.sector] && fc[L.sector].from) || [];
+      const used = from.some(x => x.ports.includes(L.port) && x.trains > 0.05);
+      ctx.lineCap = 'butt';
+      ctx.strokeStyle = used ? K.ink : K.soft;
+      ctx.lineWidth = used ? 2.5 : 1.5;
+      ctx.setLineDash(used ? [] : [4, 3]);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
   // Where each port's anchor sits on the map (Antwerp at its station)
   function portSpot(id) {
     if (id === 'cherbourg') return px(-0.035, 0.07);
@@ -689,6 +706,7 @@ const Draw = (() => {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.drawImage(paper, 0, 0, W, H);
     drawFront(st);
+    drawPortLinks(st);
     for (const key in Sim.LINKS) drawLink(st, key);
     drawBridges(st);
     drawPorts(st);

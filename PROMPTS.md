@@ -208,6 +208,13 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - Steve's tip: pushing the British & Canadians hard first opens the Channel ports (Le Havre, then Antwerp) sooner, and that works well
 - New test: unused petrol fills the dump (never past its limit) and a storm draws it down
 
+## 25. Port links drawn on the map
+
+- Steve: "Le Havre's trains reach US First at Paris without going through Saint-Lô": how, when there's no track on the map?
+- The rules always had two hidden links: Le Havre's trains up the Seine valley line (Rouen to Paris) and Antwerp's to Liège, up to 8 trains a day each, once US First's railhead reaches Paris or Liège. Nothing drew them
+- Steve chose: draw them. They are now thin lines on the map: faint and dashed until they carry trains, solid once they do. Legend entry "Port link"; hovering Paris or Liège says whose trains join there and when; How to play mentions them. US First's supply line already shows "Le Havre" as its source when the link is in use
+- The links are one list in `js/data.js` (PORT_LINKS), used by the rules, the map and the hover. Rules unchanged (same fingerprint)
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -215,4 +222,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 125 min | Prompts 17–24: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump |
+| 4 | 2026-10-30 | about 135 min | Prompts 17–25: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump; port links drawn |
