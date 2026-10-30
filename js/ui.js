@@ -178,11 +178,17 @@ const UI = (() => {
     });
   }
 
-  // The mix button closest to what the sector burns, bombers and truck fuel included
+  // The mix button that best refills the sector: what it burns over the next few days (bombers and truck fuel included),
+  // less what is already at the front and in the depot. With nothing short, the mix that matches what it burns
   function matchMix(sec) {
     const n = Sim.needs(sec);
     const extraFuel = sec.bombers * BOMBER_FUEL + (n.fuel + n.ammo) * Math.max(20, Sim.gap(st, sec)) * TRUCK_FUEL;
-    const share = 100 * (n.fuel + extraFuel) / (n.fuel + extraFuel + n.ammo);
+    // Fuel and ammo still to bring to have STOCK_DAYS in hand
+    const fuelShort = Math.max(0, (n.fuel + extraFuel) * STOCK_DAYS - sec.stock.fuel - sec.depot.fuel);
+    const ammoShort = Math.max(0, n.ammo * STOCK_DAYS - sec.stock.ammo - sec.depot.ammo);
+    // Nothing short: keep pace with what it burns
+    const burnShare = 100 * (n.fuel + extraFuel) / (n.fuel + extraFuel + n.ammo);
+    const share = fuelShort + ammoShort > 0 ? 100 * fuelShort / (fuelShort + ammoShort) : burnShare;
     return MIXES.reduce((a, b) => (Math.abs(b.fuel - share) < Math.abs(a.fuel - share) ? b : a)).fuel;
   }
 
@@ -211,8 +217,9 @@ const UI = (() => {
     const need = n.fuel + n.ammo;
     const gap = Sim.gap(st, sec);
     const d = Math.max(20, gap);
-    const perTruck = TRUCK_TONS * Math.min(2, TRUCK_KM_PER_DAY / (2 * d));
     const truckCap = Sim.truckCapacity(st, sec);
+    // What one more column adds: the same as this army's columns carry now (wear and the Red Ball included)
+    const perTruck = sec.trucks > 0 ? truckCap / sec.trucks : TRUCK_TONS * Math.min(2, TRUCK_KM_PER_DAY / (2 * d));
     const burn = need * d * TRUCK_FUEL;
     const bomberFuel = sec.bombers * BOMBER_FUEL;
     const f = window.Game.forecast[sec.id] || { trains: 0, supplyTrains: 0 };
@@ -243,6 +250,48 @@ const UI = (() => {
     return worst;
   }
 
+  // The first station on this sector's line that another sector's trains also run through, and the sectors that use it
+  function sharedStation(sec) {
+    const rh = Sim.railhead(st, sec), line = Sim.sectorDef(sec.id).line;
+    for (let i = 1; i <= rh.index; i++) {
+      // Every sector whose trains reach this station
+      const users = st.sectors.filter(o => {
+        const at = Sim.sectorDef(o.id).line.indexOf(line[i]);
+        return at > 0 && at <= Sim.railhead(st, o).index;
+      });
+      if (users.length > 1) return { node: line[i], users };
+    }
+    return null;
+  }
+
+  // Why the line takes fewer trains than this sector sends, and what to do about it.
+  // A damaged station: repair it. Every station repaired: repairs can't help, so share the track or send the trains elsewhere
+  function lineAdvice(sec) {
+    // The ports landed fewer trainloads than the armies send: no work on the line can fix that
+    const landed = Sim.landing(st).total;
+    const through = st.sectors.reduce((a, o) => a + ((window.Game.forecast[o.id] || {}).trains || 0), 0);
+    if (through >= landed - 0.1) {
+      const storm = st.storm > 0 ? ': a Channel storm is cutting the beaches' : '';
+      return { why: `: the ports land only ${landed.toFixed(1)} trainloads a day for all the armies${storm}`, fix: 'Repairs on the line can\'t help. Send <b>port companies</b> to a port, or wait for the weather.' };
+    }
+    const c = chokeStation(sec);
+    // A station still damaged: repairs let more trains through
+    if (c && st.nodes[c].cond < STATION_FULL) {
+      return { damaged: true, why: `: <b>${NODES[c].name}</b> station is at ${Math.round(st.nodes[c].cond)}%`, fix: 'Set engineers to <b>Station 🚉</b> so more get through.' };
+    }
+    const shared = sharedStation(sec);
+    // Track shared with another army: one army's trains only get through if the other sends fewer
+    if (shared) {
+      const others = shared.users.filter(o => o !== sec).map(o => `<b>${secName(o.id)}</b>`).join(' and ');
+      return {
+        why: `: the track through <b>${NODES[shared.node].name}</b> is shared by ${shared.users.map(o => secName(o.id)).join(' and ')} and is full`,
+        fix: `Repairs can't add more. Take trains off ${others} so more of the track goes to this army, or <b>Hold</b> here so it needs less.`,
+      };
+    }
+    // The line itself is at its limit
+    return { why: ': the line is running at full', fix: "Repairs can't add more. Move the trains that can't get through to another army." };
+  }
+
   // Another sector with trucks or trains to spare
   function donor(sec, kind) {
     let best = null, spare = 0;
@@ -260,7 +309,8 @@ const UI = (() => {
   // Where to get more trucks or trains from
   function source(sec, kind, more) {
     const free = kind === 'trucks' ? Sim.freePool(st, 'trucks', TRUCK_COLUMNS) : Sim.freeTrains(st);
-    if (free > 0) return ` (${free} free)`;
+    // Say what the spare ones are called at the top of the page, so the number isn't read as how many to add
+    if (free > 0) return kind === 'trucks' ? ` (from the ${free} resting)` : ` (from the ${free} free)`;
     const d = donor(sec, kind);
     return d ? ` (take ${Math.min(more, d.n)} from <b>${secName(d.sec.id)}</b>)` : '';
   }
@@ -285,15 +335,6 @@ const UI = (() => {
         ? `▶️ ${inHand.toFixed(1)} days in hand: press <b>Advance</b> for a push about ${Math.round(WELL_SUPPLIED * 4 * 100)}% faster than usual.`
         : `⏸️ Holding: dug in (defence +${Math.round((HOLD_DEFENCE - 1) * 100)}%), engineers working ${HOLD_ENGINEERS}× as fast, guns softening the Germans, and trucks stocking the front up to ${HOLD_STOCK_DAYS} days. Advance at about 4 days in hand.`];
     }
-    const choke = () => {
-      const c = chokeStation(sec);
-      if (!c) return '';
-      if (st.nodes[c].cond >= 85) {
-        const users = st.sectors.filter(o => Sim.sectorDef(o.id).line.indexOf(c) > 0 && Sim.sectorDef(o.id).line.indexOf(c) <= Sim.railhead(st, o).index);
-        if (users.length > 1) return `: the track through <b>${NODES[c].name}</b> is shared by ${users.map(o => secName(o.id)).join(' and ')} and is full`;
-      }
-      return `: <b>${NODES[c].name}</b> station is at ${Math.round(st.nodes[c].cond)}%`;
-    };
     const rhNow = Sim.railhead(st, sec), lineNow = Sim.sectorDef(sec.id).line;
     if (rhNow.index + 1 < lineNow.length) {
       const br = Sim.bridgeBlock(st, Sim.linkKey(lineNow[rhNow.index], lineNow[rhNow.index + 1]));
@@ -302,7 +343,16 @@ const UI = (() => {
         return ['bad', `${bridgeIcon('blown')} The railhead is stuck at the blown <b>${br.river}</b> bridge: ${Math.round(left)} battalion-days of work, about ${eng ? Math.ceil(left / eng) : '∞'} days with ${sec.engineers} engineers. Add engineers, or set them to <b>🛤️ Track</b>.`];
       }
     }
-    if (f.lineShort && f.trainRatio < 1) return ['bad', `🚧 The line only takes <b>${f.lineTakes.toFixed(1)}</b> trains a day${choke()}. Set engineers to <b>Station 🚉</b> so more get through.`];
+    if (f.lineShort && f.trainRatio < 1) {
+      const line = lineAdvice(sec);
+      return ['bad', `🚧 The line only takes <b>${f.lineTakes.toFixed(1)}</b> trains a day${line.why}. ${line.fix}`];
+    }
+    // Petrol is short everywhere: more trains, trucks or the Red Ball can't bring fuel that never landed
+    const fuel = Sim.fuelPlan(st);
+    if (fuel.factor < FUEL_SHORT && f.daysF < 2 && f.daysF < f.daysA) {
+      const bombers = sec.bombers ? `, take <b>bombers</b> off (each burns ${BOMBER_FUEL} t a day)` : '';
+      return ['bad', `⛽ Petrol is the limit: only ${Math.round(fuel.factor * 100)}% of the fuel the armies asked for came ashore, so more trains, trucks or the Red Ball won't help. <b>Hold</b> (armour then burns about a tenth)${bombers}, or send port companies to a port.`];
+    }
     const depotDays = Math.min(f.depotDaysF, f.depotDaysA);
     if (sec.truckCond < 45 && f.truckRatio < 1) {
       return ['bad', `🔧 This army's trucks are worn (${Math.round(sec.truckCond)}%) and carry only ${Math.round((TRUCK_MIN_LOAD + (1 - TRUCK_MIN_LOAD) * sec.truckCond / 100) * 100)}% of a load. Rest them: take a column off (it recovers ${TRUCK_REST}% a day), then put a rested one back.`];
@@ -317,15 +367,20 @@ const UI = (() => {
     }
     if (f.truckRatio < 1 && (f.truckRatio <= f.trainRatio || depotDays > 2)) {
       const more = Math.ceil((f.need - f.truckCap) / Math.max(1, f.perTruck));
-      return [tone(f.truckRatio), `🚚 Trucks carry ${t(f.truckCap)} of the ${t(f.need)} t a day the front uses, over ${t(f.gap)} km. Add <b>${more}</b> truck${more > 1 ? 's' : ''}${source(sec, 'trucks', more)}, or more <b>engineers</b> to bring the railhead closer.`];
+      // Engineers only help when the railhead is a fair way back; trucks always drive at least 20 km
+      const closer = f.gap > 20 ? ', or more <b>engineers</b> to bring the railhead closer' : '';
+      return [tone(f.truckRatio), `🚚 Trucks carry ${t(f.truckCap)} of the ${t(f.need)} t a day the front uses, over ${t(Math.max(20, f.gap))} km. Add <b>${more}</b> truck${more > 1 ? 's' : ''}${source(sec, 'trucks', more)}${closer}.`];
     }
     if (f.trainRatio < 1 && depotDays < 3) {
       const more = Math.ceil((f.trainNeed - f.trainTons) / TRAIN_TONS);
       return [tone(f.trainRatio), `🚂 Trains bring ${t(f.trainTons)} t a day; this sector needs about ${t(f.trainNeed)} with truck and bomber fuel. Add <b>${more}</b> train${more > 1 ? 's' : ''}${source(sec, 'trains', more)}.`];
     }
-    if (f.lineShort) return ['meh', `🚧 Only <b>${f.lineTakes.toFixed(1)}</b> of your trains get through${choke()}. Move the extra trains to another sector, or set engineers to <b>Station 🚉</b>.`];
-    if (f.depotDaysA < 1 && f.depotDaysF > 3) return ['meh', '💥 The depot is nearly out of <b>ammo</b> but has spare fuel. Pick the mix underlined in green, or one more toward 💥.'];
-    if (f.depotDaysF < 1 && f.depotDaysA > 3) return ['meh', '⛽ The depot is nearly out of <b>fuel</b> but has spare ammo. Pick the mix underlined in green, or one more toward ⛽.'];
+    if (f.lineShort) {
+      const line = lineAdvice(sec);
+      return ['meh', `🚧 Only <b>${f.lineTakes.toFixed(1)}</b> of your trains get through${line.why}. Move the extra trains to another army${line.damaged ? ', or set engineers to <b>Station 🚉</b>' : ''}.`];
+    }
+    if (f.depotDaysA < 1 && f.depotDaysF > 3) return ['meh', '💥 The depot is nearly out of <b>ammo</b> but has spare fuel. Pick the mix underlined in green.'];
+    if (f.depotDaysF < 1 && f.depotDaysA > 3) return ['meh', '⛽ The depot is nearly out of <b>fuel</b> but has spare ammo. Pick the mix underlined in green.'];
     if (sec.depot.fuel + sec.depot.ammo > DEPOT_MAGNET) return ['meh', '🎯 This depot is very full: a magnet for German bombers. Send some of its trains to a sector that needs them.'];
     if (sec.limit === 'resistance') return ['meh', '🛡️ Supply is fine; German resistance is the brake. Add <b>bombers</b>, or send <b>artillery</b> or an <b>armoured division</b>.'];
     if (sec.limit === 'mobility') {
@@ -404,7 +459,7 @@ const UI = (() => {
     $('#free-trucks').textContent = `${resting} resting`;
     $('#free-trucks').title = `Resting columns: ${Math.round(st.restCond)}% condition. Columns not given to an army rest and recover ${TRUCK_REST}% a day. Take a worn column off an army, put a rested one on`;
     const fuel = Sim.fuelPlan(st);
-    $('#fuel-state').innerHTML = fuel.factor < 0.98 ? `<span class="free short" title="The mixes ask for more fuel than the ports landed today: every army gets ${Math.round(fuel.factor * 100)}% of the fuel it asked for, the rest of the train space goes to ammo">⛽ ${Math.round(fuel.factor * 100)}% of fuel</span>` : `<span class="free have" title="Fuel landed covers what the mixes ask for">⛽ ${t(fuel.landed - fuel.asked)} t spare</span>`;
+    $('#fuel-state').innerHTML = fuel.factor < 0.98 ? `<span class="free short" title="The mixes ask for more fuel than the ports landed today: every army gets ${Math.round(fuel.factor * 100)}% of the fuel it asked for, the rest of the train space goes to ammo">⛽ ${Math.round(fuel.factor * 100)}% of fuel</span>` : `<span class="free have" title="Fuel landed at the ports covers what the mixes ask for. The spare only helps an army whose line has room for more trains: a full line (like the one through Saint-Lô) can't carry it">⛽ ${t(fuel.landed - fuel.asked)} t spare ashore</span>`;
     freeBadge('#free-engineers', Sim.freePool(st, 'engineers', ENGINEERS));
     freeBadge('#free-bombers', Sim.freePool(st, 'bombers', BOMBER_GROUPS - st.bombersLost));
 
@@ -422,7 +477,7 @@ const UI = (() => {
       c.focus.update();
       const rec = matchMix(sec);
       c.mix.update(rec);
-      c.mixNote.innerHTML = sec.fuelMix === rec ? '<span>matches what it uses</span>' : '<span><span class="warn">green line</span> matches what it uses</span>';
+      c.mixNote.innerHTML = sec.fuelMix === rec ? '<span>refills what it needs</span>' : '<span><span class="warn">green line</span> refills what it needs</span>';
       const forces = UNIT_ORDER.map(u => `<span class="force" title="${UNIT_TYPES[u].name}">${unitIcon(u)} ${UNIT_TYPES[u].short}: <b>${sec.forces[u]}</b></span>`).join('');
       const coming = [
         ...st.queue.filter(q => q.sector === sec.id).map(q => `${unitIcon(q.type)} ${UNIT_TYPES[q.type].short} loading`),

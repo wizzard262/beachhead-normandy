@@ -181,6 +181,8 @@ const RECON_RIGHT = 0.75;        // chance air recon names the right sector for 
 const STATION_BLOWN = 0.12;      // chance the Germans blow a station up completely as they leave
 const FAST_ADVANCE_KM = 20;      // a front moving this fast (km a day) doubles the chance of taking bridges intact
 const DEPOT_MAGNET = 9000;       // tons in a depot at which the advice warns it draws German bombers
+const STATION_FULL = 95;         // a station repaired this far counts as full: the advice stops asking for station repairs
+const FUEL_SHORT = 0.95;         // below this share of the fuel asked for landing, the advice says petrol is the limit
 
 // The real dates, for the result screen
 const HISTORY = [

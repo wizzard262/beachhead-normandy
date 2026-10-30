@@ -136,6 +136,21 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - Live at https://wizzard262.github.io/beachhead-normandy/. The old address shows a GitHub 404 (Steve chose no forwarding; nothing is left under the old name)
 - harriercarrier.com home page banner and portfolio links point to the new address
 
+## 17. Advice that tells the truth about full lines and fuel
+
+- Steve: "The line only takes 4.4 trains a day: the track through Saint-Lô is shared … Set engineers to Station 🚉" but the station is at 100%; lots of trucks, trains and the Red Ball don't fix a fuel crisis on max fuel; "⛽ 1,913 t spare" so why short; a front with no fuel and some ammo should get the all-fuel mix
+- Steve chose: fix the advice only, rules unchanged (the 60-game fingerprint is the same)
+- **Line full**: the advice now finds the real cause
+  - The ports land too few trainloads for all the armies (storms, wrecked ports): send port companies or wait
+  - A station still damaged (under 95%): set engineers to Station 🚉, as before
+  - Track shared by two armies and every station repaired (Saint-Lô for US First and US Third): repairs can't add more; take trains off the other army or Hold
+- **Petrol short everywhere** (under 95% of what the mixes ask lands): new advice that more trains, trucks or the Red Ball can't help; Hold, fewer bombers, port companies
+- **"⛽ … t spare" is now "spare ashore"**, and its hover says spare petrol only helps an army whose line has room
+- **Green mix** now refills what's short (front and depot against 3 days of use): a front with no fuel gets the most fuel (4:1). It used to match only what the army burns
+- **Trucks**: "Add 1 truck (7 free)" read as "need 7"; now "(from the 7 resting)". The count uses what this army's columns really carry (wear, Red Ball), and "more engineers" is left out when the railhead is within 20 km
+- Assumption: 4:1 stays the most fuel a train can carry (no all-fuel button)
+- New browser checks: `node tools/advice.js` (game served on port 8767)
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -143,3 +158,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
+| 4 | 2026-10-30 | about 45 min | Prompt 17: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts |
