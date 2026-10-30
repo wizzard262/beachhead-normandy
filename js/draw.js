@@ -99,9 +99,8 @@ const Draw = (() => {
     front: 'rgba(255,95,80,.95)', enemyShade: 'rgba(255,90,70,.10)', enemyHatch: 'rgba(255,120,100,.16)', unitBody: '#e8f0fb', unitLight: '#2a5f9a',
   });
   let K = INK;
-  let THEME = THEMES.paper;
   // The game's own look is the blueprint; ?map=<name> shows another
-  THEME = THEMES.blueprint;
+  let THEME = THEMES.blueprint;
   try { const m = new URLSearchParams(location.search).get('map'); if (THEMES[m]) THEME = THEMES[m]; } catch (e) { /* default look */ }
   if (THEME.light) K = INK_LIGHT;
 
@@ -169,7 +168,6 @@ const Draw = (() => {
     g.fillStyle = T.seaLabel; g.font = 'italic 15px Georgia, serif';
     const ch = px(0.22, 0.02);
     g.fillText('E n g l i s h   C h a n n e l', ch.x, ch.y);
-    // Cherbourg, the first big port, at the tip of the peninsula
 
     // Bocage: hedgerow country round Saint-Lô and Avranches
     g.strokeStyle = T.hedge; g.lineWidth = 1;
@@ -234,10 +232,15 @@ const Draw = (() => {
     g.fillStyle = T.border; g.font = '10px "Special Elite", monospace';
     const bl = px(0.955, 0.40);
     g.save(); g.translate(bl.x, bl.y); g.rotate(1.35); g.fillText('German border', 0, 0); g.restore();
-    // Title block
 
     return c;
   }
+
+  // Emoji drawn on the canvas, in the colour emoji font of each system
+  const emojiFont = px => `${px}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+
+  // Condition bars: green, amber or red (c in %)
+  const condInk = c => c > 66 ? '#3f7a3a' : c > 33 ? '#c47a1a' : '#a3291c';
 
   // Track: repaired part solid, bombed track dashed
   function drawLink(st, key) {
@@ -285,14 +288,14 @@ const Draw = (() => {
       }
       ctx.fillStyle = ps.taken ? K.townFill : K.enemyFill; ctx.strokeStyle = ps.taken ? K.ink : K.enemyInk; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(p.x, p.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.font = '11px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = emojiFont(11); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('⚓', p.x, p.y + 0.5); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
       if (id !== 'antwerp') { ctx.fillStyle = K.ink; ctx.font = 'bold 12px Georgia, serif'; ctx.fillText(PT.name, p.x + 12, p.y - 4); }
       if (!ps.taken) continue;
       // Cleared bar, and the Scheldt still to clear for Antwerp
       const c = ps.scheldt < 100 ? ps.scheldt : ps.cond;
       ctx.fillStyle = K.barBg; ctx.fillRect(p.x - 12, p.y + 12, 24, 4);
-      ctx.fillStyle = ps.scheldt < 100 ? '#2f5d8a' : c > 66 ? '#3f7a3a' : c > 33 ? '#c47a1a' : '#a3291c';
+      ctx.fillStyle = ps.scheldt < 100 ? '#2f5d8a' : condInk(c);
       ctx.fillRect(p.x - 12, p.y + 12, 24 * c / 100, 4);
       if (ps.scheldt < 100) { ctx.fillStyle = '#2f5d8a'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.fillText('Scheldt mined', p.x - 30, p.y + 26); }
     }
@@ -344,7 +347,7 @@ const Draw = (() => {
     if (id === 'beaches') {
       ctx.fillStyle = '#e8c27a'; ctx.strokeStyle = K.ink; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.roundRect ? ctx.roundRect(p.x - 16, p.y - 8, 32, 14, 4) : ctx.rect(p.x - 16, p.y - 8, 32, 14); ctx.fill(); ctx.stroke();
-      ctx.font = '11px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = emojiFont(11); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('⚓', p.x, p.y - 1); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
       ctx.fillStyle = K.ink; ctx.font = 'bold 13px Georgia, serif';
       const [lx, ly] = labelOffset(id);
@@ -366,10 +369,9 @@ const Draw = (() => {
     if (n.captured && id !== 'beaches') {
       fire(p, base, 1 - n.cond / 100, big, id);
       // Condition bar
-      const c = n.cond / 100;
       ctx.fillStyle = K.barBg; ctx.fillRect(p.x - 12, base + 4, 24, 4);
-      ctx.fillStyle = c > 0.66 ? '#3f7a3a' : c > 0.33 ? '#c47a1a' : '#a3291c';
-      ctx.fillRect(p.x - 12, base + 4, 24 * c, 4);
+      ctx.fillStyle = condInk(n.cond);
+      ctx.fillRect(p.x - 12, base + 4, 24 * n.cond / 100, 4);
     }
     if (objective) {
       ctx.strokeStyle = n.captured ? '#3f7a3a' : '#a3291c'; ctx.lineWidth = 2;
@@ -386,7 +388,7 @@ const Draw = (() => {
     const big = NODES[id].cap >= 9;
     if (id === 'beaches') return [-34, -22];
     if (id === 'antwerp') return [-72, -10];   // name on the left, clear of the End day button
-    return [big ? 17 : 13, id === 'polotsk' ? -12 : -9];
+    return [big ? 17 : 13, -9];
   }
 
   // Flames and smoke over a damaged town: none when whole, more and bigger as damage grows
@@ -468,19 +470,23 @@ const Draw = (() => {
     }
   }
 
-  // A railhead flag in the sector's colour
-  function drawRailhead(st, sec, i) {
+  // Where a sector's railhead flag pole stands: just left of the town at a station, on the track out on the line
+  function flagSpot(st, sec, i) {
     const rh = Sim.railhead(st, sec);
-    if (rh.node === 'beaches') return;
-    const col = Sim.sectorDef(sec.id).colour;
     const past = rh.laid >= 1;
-    // At a station the flag stands just left of the town; out on the line it stands on the track
     const p = past ? along(sec.id, rh.km) : P[rh.node];
     const ox = past ? 0 : -20 + (i - 1) * 6;
+    return { x: p.x + ox, y: p.y, node: rh.node };
+  }
+
+  // A railhead flag in the sector's colour
+  function drawRailhead(st, sec, i) {
+    const f = flagSpot(st, sec, i);
+    if (f.node === 'beaches') return;
     ctx.strokeStyle = K.ink; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(p.x + ox, p.y + 4); ctx.lineTo(p.x + ox, p.y - 20); ctx.stroke();
-    ctx.fillStyle = col;
-    ctx.beginPath(); ctx.moveTo(p.x + ox, p.y - 20); ctx.lineTo(p.x + ox - 13, p.y - 16); ctx.lineTo(p.x + ox, p.y - 12); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(f.x, f.y + 4); ctx.lineTo(f.x, f.y - 20); ctx.stroke();
+    ctx.fillStyle = Sim.sectorDef(sec.id).colour;
+    ctx.beginPath(); ctx.moveTo(f.x, f.y - 20); ctx.lineTo(f.x - 13, f.y - 16); ctx.lineTo(f.x, f.y - 12); ctx.closePath(); ctx.fill();
   }
 
   // The front line and the German side shaded
@@ -519,14 +525,11 @@ const Draw = (() => {
   // The sector's badge sits back on the German side, as a speech bubble whose tail points at its front
   const BADGE_W = 98, BADGE_H = 40;
 
-  // The railhead flags, which badges must not cover either (same spots as drawRailhead uses)
+  // The railhead flags, which badges must not cover either
   function flagBoxes(st) {
     return st.sectors.map((sec, i) => {
-      const rh = Sim.railhead(st, sec);
-      const past = rh.laid >= 1;
-      const p = past ? along(sec.id, rh.km) : P[rh.node];
-      const ox = past ? 0 : -20 + (i - 1) * 6;
-      return { x: p.x + ox - 16, y: p.y - 23, w: 19, h: 29 };
+      const f = flagSpot(st, sec, i);
+      return { x: f.x - 16, y: f.y - 23, w: 19, h: 29 };
     });
   }
 
@@ -644,11 +647,11 @@ const Draw = (() => {
     ctx.beginPath(); ctx.moveTo(cx + nx * 0.8, cy + ny * 0.8); ctx.lineTo(cx - nx * 0.8, cy - ny * 0.8);
     ctx.strokeStyle = '#f4ead2'; ctx.lineWidth = 3; ctx.stroke();
     ctx.fillStyle = col; ctx.font = 'bold 10px system-ui, sans-serif';
-    ctx.fillText((Sim.sectorDef(sec.id).short || Sim.sectorDef(sec.id).name).toUpperCase(), x + 6, y + 12);
+    ctx.fillText(Sim.sectorDef(sec.id).short.toUpperCase(), x + 6, y + 12);
     // Icon, bar, then days in hand. Full bar = 3 days of advancing, the most the trucks stock at the front
     const n = Sim.needs(sec, 'advance');
     const row = (ch, days, yy, c) => {
-      ctx.font = '9px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+      ctx.font = emojiFont(9);
       ctx.textBaseline = 'middle'; ctx.fillText(ch, x + 5, yy + 2);
       ctx.fillStyle = 'rgba(40,30,15,.18)'; ctx.fillRect(x + 18, yy, 40, 5);
       ctx.fillStyle = c; ctx.fillRect(x + 18, yy, 40 * Math.max(0, Math.min(1, days / 3)), 5);
@@ -737,7 +740,7 @@ const Draw = (() => {
   // Draw an emoji icon facing right (the emoji themselves face left)
   function icon(ch, x, y) {
     ctx.save(); ctx.translate(x, y); ctx.scale(-1, 1);
-    ctx.font = '17px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+    ctx.font = emojiFont(17);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(ch, 0, 0);
     ctx.restore();

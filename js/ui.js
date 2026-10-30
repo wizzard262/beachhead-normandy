@@ -4,6 +4,8 @@ const UI = (() => {
   let st, onChange;
   const $ = s => document.querySelector(s);
   const t = n => Math.round(n).toLocaleString('en-GB');
+  // Condition colour for bars: green, amber, or red at or below `low` (c in %)
+  const condColour = (c, low = 33) => c > 66 ? 'var(--good)' : c > low ? 'var(--fuel)' : 'var(--bad)';
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 
   // The train and truck emoji face left; wrap them so they face right (east, towards the front)
@@ -141,11 +143,11 @@ const UI = (() => {
       const free = (field, total) => Sim.freePool(st, field, total) > 0;
       const trains = stepper('🚂 Trains', () => sec.trains, v => sec.trains = v, () => Sim.freeTrains(st) > 0, () => {
         const f = window.Game.forecast[sec.id];
-        const short = f && f.trains + 0.05 < sec.trains + troopFor(sec.id);
+        const short = f && f.trains + 0.05 < sec.trains + Sim.troopTrains(st, sec.id);
         return `${t(sec.trains * TRAIN_TONS)} t a day` + (short ? `<br><span class="warn">line takes ${f.trains.toFixed(1)}</span>` : '');
       });
       const trucks = stepper('🚚 Trucks', () => sec.trucks, v => Sim.moveTrucks(st, sec, v - sec.trucks), () => free('trucks', TRUCK_COLUMNS), () => {
-        const c = Math.round(sec.truckCond), col = c > 66 ? 'var(--good)' : c > 40 ? 'var(--fuel)' : 'var(--bad)';
+        const c = Math.round(sec.truckCond), col = condColour(c, 40);
         return `<span class="dayrow" title="Condition of this army's truck columns: worn trucks carry less"><span>🔧</span><span class="bar"><i style="width:${c}%;background:${col}"></i></span><span class="${c <= 40 ? 'warn' : ''}">${c}%</span></span>${t(Sim.truckCapacity(st, sec))} t a day<br>over ${t(Math.max(20, Sim.gap(st, sec)))} km`;
       });
       const redBall = el('button', 'redball', '🔴 Red Ball');
@@ -174,10 +176,6 @@ const UI = (() => {
       wrap.append(row);
       cards.push({ sec, status, posture, forces, pipe, steppers: [trains, trucks, engineers, bombers], focus, mix, mixNote, advice });
     });
-  }
-
-  function troopFor(id) {
-    return st.queue.filter(q => q.sector === id).reduce((a, q) => a + UNIT_TYPES[q.type].trains - q.loaded, 0);
   }
 
   // The mix button closest to what the sector burns, bombers and truck fuel included
@@ -222,7 +220,7 @@ const UI = (() => {
     const trainNeed = need + burn + bomberFuel;
     return {
       n, need, gap, perTruck, truckCap, burn, bomberFuel, trainTons, trainNeed,
-      lineShort: f.trains + 0.05 < sec.trains + troopFor(sec.id), lineTakes: f.trains,
+      lineShort: f.trains + 0.05 < sec.trains + Sim.troopTrains(st, sec.id), lineTakes: f.trains,
       trainRatio: trainTons / Math.max(1, trainNeed),
       truckRatio: truckCap / Math.max(1, need),
       // Days in hand are always days of advancing, so they mean the same on Hold
@@ -270,7 +268,7 @@ const UI = (() => {
   // One line of advice: the most urgent thing to fix in this sector
   function advise(sec) {
     const f = flows(sec);
-    const atEnd = sec.front >= Sim.LINES[sec.id][Sim.LINES[sec.id].length - 1];
+    const atEnd = sec.front >= Sim.lineEnd(sec.id);
     const threat = st.intel && st.intel.sector === sec.id;
     if (atEnd && sec.posture === 'advance') return ['ok', '🏁 Objective taken. Set <b>Hold</b> and give its trains, trucks and engineers to the other sectors.'];
     if (atEnd) return ['ok', '🏁 Objective held. Keep a little ammo coming in case the Germans counterattack.'];
@@ -328,7 +326,7 @@ const UI = (() => {
     if (f.lineShort) return ['meh', `🚧 Only <b>${f.lineTakes.toFixed(1)}</b> of your trains get through${choke()}. Move the extra trains to another sector, or set engineers to <b>Station 🚉</b>.`];
     if (f.depotDaysA < 1 && f.depotDaysF > 3) return ['meh', '💥 The depot is nearly out of <b>ammo</b> but has spare fuel. Pick the mix underlined in green, or one more toward 💥.'];
     if (f.depotDaysF < 1 && f.depotDaysA > 3) return ['meh', '⛽ The depot is nearly out of <b>fuel</b> but has spare ammo. Pick the mix underlined in green, or one more toward ⛽.'];
-    if (sec.depot.fuel + sec.depot.ammo > 9000) return ['meh', '🎯 This depot is very full: a magnet for German bombers. Send some of its trains to a sector that needs them.'];
+    if (sec.depot.fuel + sec.depot.ammo > DEPOT_MAGNET) return ['meh', '🎯 This depot is very full: a magnet for German bombers. Send some of its trains to a sector that needs them.'];
     if (sec.limit === 'resistance') return ['meh', '🛡️ Supply is fine; German resistance is the brake. Add <b>bombers</b>, or send <b>artillery</b> or an <b>armoured division</b>.'];
     if (sec.limit === 'mobility') {
       const pz = st.reserves.some(u => u.type === 'pz');
@@ -362,7 +360,7 @@ const UI = (() => {
   function health(id) {
     if (id === 'beaches') return '';
     const c = Math.round(st.nodes[id].cond);
-    const col = c > 66 ? 'var(--good)' : c > 33 ? 'var(--fuel)' : 'var(--bad)';
+    const col = condColour(c);
     return `<small class="dayrow" title="Station condition: trains it can take scale with this"><span class="bar"><i style="width:${c}%;background:${col}"></i></span><span class="${c <= 33 ? 'warn' : ''}">${c}%</span></small>`;
   }
 
@@ -401,8 +399,8 @@ const UI = (() => {
     $('#objectives').innerHTML = OBJECTIVES.map(id => `<span class="obj ${st.nodes[id].captured ? 'done' : ''}">${st.nodes[id].captured ? '✅' : '🎯'} ${NODES[id].name}</span>`).join('');
     freeBadge('#free-trains', Sim.freeTrains(st));
 
-    freeBadge('#free-trucks', Sim.freePool(st, 'trucks', TRUCK_COLUMNS));
     const resting = Sim.freePool(st, 'trucks', TRUCK_COLUMNS);
+    freeBadge('#free-trucks', resting);
     $('#free-trucks').textContent = `${resting} resting`;
     $('#free-trucks').title = `Resting columns: ${Math.round(st.restCond)}% condition. Columns not given to an army rest and recover ${TRUCK_REST}% a day. Take a worn column off an army, put a rested one on`;
     const fuel = Sim.fuelPlan(st);
@@ -448,7 +446,7 @@ const UI = (() => {
       else if (P.beach && st.storm > 0) status = '<span class="warn">🌊 storm</span>';
       else if (ps.cond < 100) status = `${Math.round(ps.cond)}%`;
       else status = 'full';
-      const c = Math.round(ps.cond), col = c > 66 ? 'var(--good)' : c > 33 ? 'var(--fuel)' : 'var(--bad)';
+      const c = Math.round(ps.cond), col = condColour(c);
       const row = el('div', 'port' + (ps.taken ? '' : ' dim'));
       row.title = P.hint;
       row.innerHTML = `<div class="port-mid"><b class="port-name">⚓ ${P.name.replace('Beaches & Mulberry', 'Beaches')}</b><span class="bar"><i style="width:${ps.taken ? c : 0}%;background:${col}"></i></span><span class="muted">${status}</span><span class="port-n">${now.toFixed(1)}/${P.trains}</span></div>`;
@@ -493,7 +491,7 @@ const UI = (() => {
     }
     for (const q of st.queue) {
       const row = el('div', 'unit queued');
-      row.append(el('span', 'unit-name', `${unitIcon(q.type)} <b>${UNIT_TYPES[q.type].short}</b> <span class="muted">loading → ${Sim.sectorDef(q.sector).short || Sim.sectorDef(q.sector).name}</span>`));
+      row.append(el('span', 'unit-name', `${unitIcon(q.type)} <b>${UNIT_TYPES[q.type].short}</b> <span class="muted">loading → ${Sim.sectorDef(q.sector).short}</span>`));
       if (q.loaded === 0) {
         const b = el('button', 'tiny', 'Cancel');
         b.onclick = () => { Sim.cancelUnit(st, q.id); onChange(); };
@@ -573,10 +571,7 @@ const UI = (() => {
       }
       if (!depots.length) lines.push('No depot here: trains pass through');
     }
-    tip.innerHTML = lines.join('<br>');
-    tip.hidden = false;
-    tip.style.left = Math.min(x + 14, window.innerWidth - 270) + 'px';
-    tip.style.top = Math.min(y + 14, window.innerHeight - 120) + 'px';
+    place(lines.join('<br>'));
   }
 
   // How far ahead of or behind the real date an objective was taken, e.g. " · you: +9 days ahead"

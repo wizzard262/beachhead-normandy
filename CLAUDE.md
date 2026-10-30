@@ -6,6 +6,7 @@ Repo: private GitHub `wizzard262/railhead-normandy`. Beachhead (was Railhead: No
 - At the end of each session, record its length in the **Sessions** table at the bottom of PROMPTS.md (keep that table last)
 - After each change to the game, save a numbered screenshot in `screenshots/` (`03-short-name.png`, …), taken in a visible browser, then add it to `screenshots/list.json`
   - `node tools/shot.js <name> [days to play] [width] [height]` with the game served at http://localhost:8767/ (`python -m http.server 8767`). It borrows Playwright from `..\harrier-carrier-playwright-tests`
+- Run `node tools/test.js` before every commit (headless checks of the rules: same seed same game, nothing negative or out of range, deadlines, sending units). Its fingerprint of 60 games changes only when the rules or numbers change: after a deliberate rules change, paste in the new value it prints
 - After a rules change, run `node tools/sweep.js "" "LEVEL=easy" "LEVEL=hard"` (150 headless games per strategy) and check leaving everything alone mostly loses while holding and pushing well wins
 - Plain JavaScript, 2D canvas, classic scripts loaded in order (no modules, no `fetch` in the game), so it also runs straight from the file
   - `js/data.js` the map and every number to tune (PORTS, STORM, BRIDGES: beaches, ports, storms, blown bridges); `js/sim.js` the rules (no DOM); `js/draw.js` the staff map; `js/ui.js` the rows, report and pop-ups; `js/main.js` start-up, animation and input

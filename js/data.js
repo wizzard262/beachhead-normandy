@@ -1,7 +1,6 @@
 // Beachhead: Normandy 1944. The map and the world numbers for the Allied breakout
 
 const START_DATE = new Date(1944, 7, 1);    // day 1 = Tuesday 1 August 1944, a week after the Cobra breakout began
-const LAST_DAY = 50;                         // 19 September 1944 (Normal; the balance tools use this)
 
 // Difficulty: the same campaign, a different deadline
 const DIFFICULTY = {
@@ -135,13 +134,13 @@ const SECTORS = [
 
 // need = tons a day by posture; attack/defend = combat power; speed = km a day added
 const UNIT_TYPES = {
-  inf: { name: 'Infantry division', short: 'Inf', icon: '✕', trains: 2, march: 40,
+  inf: { name: 'Infantry division', short: 'Inf', trains: 2, march: 40,
          need: { advance: { fuel: 60, ammo: 50 }, hold: { fuel: 12, ammo: 25 } },
          attack: 1, defend: 1.5, speed: 0.5 },
-  pz:  { name: 'Armoured division', short: 'Armd', icon: '⬭', trains: 3, march: 100,
+  pz:  { name: 'Armoured division', short: 'Armd', trains: 3, march: 100,
          need: { advance: { fuel: 340, ammo: 50 }, hold: { fuel: 35, ammo: 20 } },
          attack: 2.5, defend: 1, speed: 3 },
-  art: { name: 'Artillery group', short: 'Art', icon: '●', trains: 2, march: 40,
+  art: { name: 'Artillery group', short: 'Art', trains: 2, march: 40,
          need: { advance: { fuel: 40, ammo: 110 }, hold: { fuel: 8, ammo: 50 } },
          attack: 1.5, defend: 2.5, speed: 0 },
 };
@@ -177,6 +176,11 @@ const OBJECTIVES = ['paris', 'antwerp', 'aachen', 'metz'];
 const SOVIET_GROWTH = 10;        // German reserves a day, plus SOVIET_GROWTH_PER_DAY x the day
 const SOVIET_GROWTH_PER_DAY = 0.3;
 const BUILDUP_CHANCE = 0.6;      // chance each quiet day that a counterattack build-up starts once reserves are ready
+const AIR_RAID = { chance: 0.12, minStock: 1500, loss: 0.25 };   // chance a day of a raid on the fullest depot, the tons it must hold, and the share burnt
+const RECON_RIGHT = 0.75;        // chance air recon names the right sector for a build-up
+const STATION_BLOWN = 0.12;      // chance the Germans blow a station up completely as they leave
+const FAST_ADVANCE_KM = 20;      // a front moving this fast (km a day) doubles the chance of taking bridges intact
+const DEPOT_MAGNET = 9000;       // tons in a depot at which the advice warns it draws German bombers
 
 // The real dates, for the result screen
 const HISTORY = [

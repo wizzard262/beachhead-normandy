@@ -49,9 +49,8 @@ const Sim = (() => {
       bombersLost: 0,
       soviet: { pool: 10, buildup: null, lastTarget: null },
       storm: 0, ports: {}, bridges: [], redBall: null, restCond: 100, fuelFactor: 1,
-      report: [], events: { attacks: [], raids: [], captures: [], bombed: [] },
+      report: [], events: { attacks: [], raids: [] },
       intel: null, won: false, lost: false, wonDay: null,
-      history: [],
     };
     for (const id in NODES) st.nodes[id] = { captured: id === 'beaches', everCaptured: id === 'beaches', cond: 100, day: 0 };
     for (const id in START_CAPTURED) Object.assign(st.nodes[id], { captured: true, everCaptured: true, cond: START_CAPTURED[id] });
@@ -110,6 +109,15 @@ const Sim = (() => {
 
   function sectorDef(id) { return SECTORS.find(s => s.id === id); }
 
+  // km from the beaches to the end of a sector's line (its objective)
+  const lineEnd = id => LINES[id][LINES[id].length - 1];
+
+  // Troop trains still to load: for one sector, or for every sector when none is given
+  function troopTrains(st, sectorId) {
+    const units = st.queue.filter(q => !sectorId || q.sector === sectorId);
+    return units.reduce((a, q) => a + UNIT_TYPES[q.type].trains - q.loaded, 0);
+  }
+
   // The first bridge on a link that trains can't cross yet (still German-held or blown)
   function bridgeBlock(st, key) {
     return st.bridges.find(b => b.link === key && b.state !== 'intact' && b.state !== 'rebuilt');
@@ -164,8 +172,7 @@ const Sim = (() => {
   }
 
   // Fuel landed against fuel asked for: if the mixes ask for more petrol than came ashore, every army gets a share
-  function fuelPlan(st) {
-    const got = allocateTrains(st);
+  function fuelPlan(st, got = allocateTrains(st)) {
     let asked = 0;
     for (const sec of st.sectors) {
       const supply = Math.max(0, got[sec.id] - requested(st, sec).troop);
@@ -177,8 +184,7 @@ const Sim = (() => {
 
   // Trains each sector asks for today: supply trains plus troop trains queued for it
   function requested(st, sec) {
-    const troop = st.queue.filter(q => q.sector === sec.id).reduce((a, q) => a + UNIT_TYPES[q.type].trains - q.loaded, 0);
-    return { supply: sec.trains, troop };
+    return { supply: sec.trains, troop: troopTrains(st, sec.id) };
   }
 
   // Trainloads each port lands today: its size x its condition, the beaches cut by storms; nothing until taken (and the Scheldt cleared)
@@ -281,8 +287,7 @@ const Sim = (() => {
   // Whole trains still free. A unit part-way through loading still holds the rest of its trains,
   // which leaves a fraction over: round down, as you can only give out whole trains
   function freeTrains(st) {
-    const troop = st.queue.reduce((a, q) => a + UNIT_TYPES[q.type].trains - q.loaded, 0);
-    const free = trainsToday(st) - troop - st.sectors.reduce((a, s) => a + s.trains, 0);
+    const free = trainsToday(st) - troopTrains(st) - st.sectors.reduce((a, s) => a + s.trains, 0);
     return Math.floor(free + 1e-6);
   }
 
@@ -329,7 +334,7 @@ const Sim = (() => {
     if (st.won || st.lost) return;
     const R = st.rand;
     const rep = [];
-    const ev = { attacks: [], raids: [], captures: [], bombed: [], arrived: [] };
+    const ev = { attacks: [], raids: [] };
     const sov = st.soviet;
 
     // 1. German reserves grow and are sent to the front
@@ -343,7 +348,7 @@ const Sim = (() => {
     } else if (sov.pool >= 30 && R() < BUILDUP_CHANCE) {
       let best = null, bestW = -1e9;
       for (const sec of st.sectors) {
-        if (sec.front >= LINES[sec.id][LINES[sec.id].length - 1]) continue;
+        if (sec.front >= lineEnd(sec.id)) continue;
         const w = weakness(st, sec);
         if (w > bestW) { bestW = w; best = sec; }
       }
@@ -360,7 +365,7 @@ const Sim = (() => {
     }
     for (const sec of st.sectors) {
       sec.res += 0.6;
-      if (LINES[sec.id][LINES[sec.id].length - 1] - sec.front < WEST_WALL_KM) sec.res += WEST_WALL_RES;
+      if (lineEnd(sec.id) - sec.front < WEST_WALL_KM) sec.res += WEST_WALL_RES;
     }
 
     // 2. Bombers: fuel from the sector's depot, hit the German build-up or the line
@@ -376,7 +381,6 @@ const Sim = (() => {
       if (sov.buildup && sov.buildup.sector === sec.id) {
         const hit = Math.min(sov.buildup.strength, flying * 6);
         sov.buildup.strength -= hit;
-        ev.bombed.push(sec.id);
         rep.push(`✈️ ${SECTOR_NAME(sec.id)}: fighter-bombers caught German columns moving up.`);
       }
       for (let g = 0; g < flying; g++) {
@@ -427,7 +431,7 @@ const Sim = (() => {
 
     // 3. Trains: troop trains first, the rest is supply. Fuel only as far as the ports landed it
     const got = allocateTrains(st);
-    const fuel = fuelPlan(st);
+    const fuel = fuelPlan(st, got);
     st.fuelFactor = fuel.factor;
     if (fuel.factor < 0.95) rep.push(`⛽ Fuel shortage: the armies asked for ${Math.round(fuel.asked).toLocaleString()} t of petrol, only ${Math.round(fuel.landed).toLocaleString()} t came ashore. The trains carried ammo instead.`);
     for (const sec of st.sectors) {
@@ -455,11 +459,11 @@ const Sim = (() => {
     }
 
     // 4. German air raid on the fullest depot
-    if (R() < 0.12) {
+    if (R() < AIR_RAID.chance) {
       const target = st.sectors.reduce((a, b) => (b.depot.fuel + b.depot.ammo > a.depot.fuel + a.depot.ammo ? b : a));
-      if (target.depot.fuel + target.depot.ammo > 1500) {
+      if (target.depot.fuel + target.depot.ammo > AIR_RAID.minStock) {
         const rh = railhead(st, target);
-        const lossF = target.depot.fuel * 0.25, lossA = target.depot.ammo * 0.25;
+        const lossF = target.depot.fuel * AIR_RAID.loss, lossA = target.depot.ammo * AIR_RAID.loss;
         target.depot.fuel -= lossF; target.depot.ammo -= lossA;
         if (rh.node !== 'beaches') st.nodes[rh.node].cond = Math.max(0, st.nodes[rh.node].cond - 20 - R() * 15);
         ev.raids.push(rh.node);
@@ -537,7 +541,7 @@ const Sim = (() => {
         sec.status = halted ? 'Pushed back' : 'Holding';
         continue;
       }
-      const end = LINES[sec.id][LINES[sec.id].length - 1];
+      const end = lineEnd(sec.id);
       if (sec.front >= end) {
         sec.lastAdvance = 0; sec.status = 'Objective taken';
         const h = needs(sec, 'hold');
@@ -579,10 +583,9 @@ const Sim = (() => {
             node.everCaptured = true;
             const days = st.day - sec.lastCapture;
             let cond = clamp(85 - days * 7 + (R() * 30 - 15), 5, 90);
-            if (R() < 0.12) cond = 0;
+            if (R() < STATION_BLOWN) cond = 0;
             node.cond = Math.round(cond);
             node.day = st.day;
-            ev.captures.push(line[i]);
             const what = cond === 0 ? 'station blown up' : cond < 35 ? 'badly wrecked' : cond < 65 ? 'damaged' : 'lightly damaged';
             rep.push(`🚩 ${NODES[line[i]].name} taken (${what}, ${node.cond}%).`);
           }
@@ -656,7 +659,6 @@ const Sim = (() => {
         const sec = st.sectors.find(s => s.id === m.sector);
         sec.forces[m.type]++;
         st.marching.splice(st.marching.indexOf(m), 1);
-        ev.arrived.push(m.sector);
         rep.push(`✅ ${SECTOR_NAME(m.sector)}: ${UNIT_TYPES[m.type].name} reached the front.`);
       }
     }
@@ -668,7 +670,7 @@ const Sim = (() => {
         const line = sectorDef(sec.id).line, [a1, b1] = br.link.split('|'), i = line.indexOf(a1);
         if (i < 0 || line[i + 1] !== b1) continue;
         if (sec.front < LINES[sec.id][i] + LINKS[br.link].len * br.at) continue;
-        const fast = sec.lastAdvance >= 20;
+        const fast = sec.lastAdvance >= FAST_ADVANCE_KM;
         br.state = R() < BRIDGE_INTACT * (fast ? 2 : 1) ? 'intact' : 'blown';
         rep.push(br.state === 'intact' ? `🌉 ${br.river} bridge taken intact by ${SECTOR_NAME(sec.id)}!` : `💥 ${br.river} bridge blown by the retreating Germans: ${br.work} battalion-days to rebuild.`);
         break;
@@ -678,7 +680,7 @@ const Sim = (() => {
     // 10. Intelligence: right most of the time
     st.intel = null;
     if (sov.buildup) {
-      const right = R() < 0.75;
+      const right = R() < RECON_RIGHT;
       const others = st.sectors.filter(s => s.id !== sov.buildup.sector);
       const guess = right ? sov.buildup.sector : others[Math.floor(R() * others.length)].id;
       st.intel = { sector: guess, text: `🔍 Air recon: German forces massing opposite ${SECTOR_NAME(guess)}.` };
@@ -688,7 +690,6 @@ const Sim = (() => {
       sec.depot[k] = Math.max(0, sec.depot[k]);
       sec.stock[k] = Math.max(0, sec.stock[k]);
     }
-    st.history.push(st.sectors.map(s => Math.round(s.front)));
     st.day++;
     arrivals(st);
     for (const r of REINFORCEMENTS) if (r.day === st.day) rep.push(`🆕 ${UNIT_TYPES[r.type].name} landed at the beaches, ready to send forward.`);
@@ -712,7 +713,7 @@ const Sim = (() => {
 
   return {
     landing, trainsToday, portTrains, bridgeBlock, moveTrucks, fuelPlan,
-    LINES, LINKS, linkKey, newGame, endDay, needs, power, limits, railhead, railheadIndex, gap,
+    LINES, LINKS, linkKey, lineEnd, troopTrains, newGame, endDay, needs, power, limits, railhead, railheadIndex, gap,
     truckCapacity, forecast, freePool, freeTrains, sendUnit, cancelUnit, dateText, sectorDef,
   };
 })();
