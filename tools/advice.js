@@ -39,7 +39,7 @@ function check(name, ok, detail) {
   let a = await advice({ cherbourg: 100, stlo: 100, north: 3, centre: 6, south: 6 });
   const usFull = a[1] + ' | ' + a[2];
   check('Saint-Lô at 100% does not ask for station repairs', !usFull.includes('Station 🚉'), usFull);
-  check('Saint-Lô at 100% says repairs can\'t help', usFull.includes("Repairs can't add more"), usFull);
+  check('Saint-Lô at 100% says the shared track is full', usFull.includes('is shared by US First Army and US Third Army and is full'), usFull);
 
   // Saint-Lô damaged: repairs help
   a = await advice({ cherbourg: 100, stlo: 50, north: 3, centre: 6, south: 6 });
