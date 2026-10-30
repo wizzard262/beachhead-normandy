@@ -11,7 +11,7 @@ const Draw = (() => {
 
   // Where each station sits: x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom)
   const LAYOUT = {
-    beaches: [0.03, 0.24], caen: [0.14, 0.32], rouen: [0.33, 0.24], amiens: [0.50, 0.12], brussels: [0.80, 0.16], antwerp: [0.73, 0.00],
+    beaches: [0.03, 0.24], caen: [0.14, 0.32], rouen: [0.33, 0.24], amiens: [0.50, 0.12], brussels: [0.74, 0.19], antwerp: [0.85, 0.05],
     stlo: [0.05, 0.44], alencon: [0.21, 0.62], paris: [0.45, 0.54], sedan: [0.73, 0.42], liege: [0.88, 0.30], aachen: [1.00, 0.24],
     avranches: [0.02, 0.68], lemans: [0.19, 0.92], chartres: [0.36, 0.84], reims: [0.62, 0.66], verdun: [0.80, 0.78], metz: [0.98, 0.90],
   };
@@ -210,7 +210,7 @@ const Draw = (() => {
       'Marne':   [[0.46, 0.56], [0.55, 0.60], [0.63, 0.69], [0.70, 0.80]],
       'Meuse':   [[0.88, -0.12], [0.84, 0.10], [0.80, 0.25], [0.76, 0.43], [0.79, 0.62], [0.81, 0.80], [0.84, 1.12]],
       'Moselle': [[1.04, 0.55], [1.00, 0.72], [0.99, 0.92], [0.96, 1.12]],
-      'Scheldt': [[0.58, -0.12], [0.66, -0.04], [0.73, 0.02], [0.78, 0.10]],
+      'Scheldt': [[0.66, -0.12], [0.74, -0.06], [0.80, -0.01], [0.85, 0.05]],
     };
     g.strokeStyle = T.river; g.lineCap = 'round'; g.lineJoin = 'round';
     g.fillStyle = T.seaLabel; g.font = 'italic 11px Georgia, serif';
@@ -385,6 +385,7 @@ const Draw = (() => {
   function labelOffset(id) {
     const big = NODES[id].cap >= 9;
     if (id === 'beaches') return [-34, -22];
+    if (id === 'antwerp') return [-72, -10];   // name on the left, clear of the End day button
     return [big ? 17 : 13, id === 'polotsk' ? -12 : -9];
   }
 

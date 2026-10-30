@@ -89,6 +89,12 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - The legend's 🌉 emoji didn't match the bridges on the map: it now shows small drawn bridges like the map's, "working bridge" and "blown bridge (rebuild to use)"; the same pictures replace 🌉 in the engineer notes, the advice and the hover text
 - Removed "■ big station" from the legend: the town pictures on the map already show the big cities (also in Railhead)
 
+## 9. Antwerp on the wrong side of the front
+
+- Antwerp looked to be on my side of the front line, but the panel said it was still 76 km away on the other side
+- The British line turned back west to reach Antwerp, so the drawn front line passed east of it. Antwerp now sits north-east of Brussels on the board (name to its left, clear of the End day button), so it stays on the German side until it's taken
+- Also checked: every + and − button matches what's free (+ greys out when nothing is free to give; left as it is)
+
 ## Sessions
 
 | # | Date | Length | What we did |
