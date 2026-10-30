@@ -351,7 +351,7 @@ const UI = (() => {
     const fuel = Sim.fuelPlan(st);
     if (fuel.factor < FUEL_SHORT && f.daysF < 2 && f.daysF < f.daysA) {
       const bombers = sec.bombers ? `, take <b>bombers</b> off (each burns ${BOMBER_FUEL} t a day)` : '';
-      return ['bad', `⛽ Petrol is the limit: only ${Math.round(fuel.factor * 100)}% of the fuel the armies asked for came ashore, so more trains, trucks or the Red Ball won't help. <b>Hold</b> (armour then burns about a tenth)${bombers}, or send port companies to a port.`];
+      return ['bad', `⛽ Petrol is the limit: the armies asked for ${t(fuel.asked - fuel.landed)} t more fuel than came ashore, so more trains, trucks or the Red Ball won't help. <b>Hold</b> (armour then burns about a tenth)${bombers}, or send port companies to a port.`];
     }
     const depotDays = Math.min(f.depotDaysF, f.depotDaysA);
     if (sec.truckCond < 45 && f.truckRatio < 1) {
@@ -439,11 +439,23 @@ const UI = (() => {
     return `<div class="pipe-next" title="The next station the front will take"><span class="flow">${t(kms[i] - sec.front)} km</span><i></i><span class="sub">${NODES[line[i]].name}${OBJECTIVES.includes(line[i]) ? ' 🎯' : ''}</span></div>`;
   }
 
-  function freeBadge(id, n) {
+  // Why the trains are short today: the ports land a different number each day (storms, autumn weather, ports cleared)
+  function trainsShortWhy() {
+    const landed = Sim.landing(st).total;
+    const asked = Sim.troopTrains(st) + st.sectors.reduce((a, s) => a + s.trains, 0);
+    // What is cutting the landings today
+    const causes = [];
+    if (st.storm > 0) causes.push('a Channel storm cuts the beaches to a quarter');
+    if (st.day >= BEACH_WEAR_DAY) causes.push('the autumn weather is wearing the beaches down');
+    const why = causes.length ? ` (${causes.join('; ')})` : '';
+    return `The trains you have are what the ports land each day, so the number changes. Today they land ${landed.toFixed(1)} trainloads${why}, and the armies ask for ${Math.round(asked * 10) / 10}. Each army gets a share: lower some, or clear more ports`;
+  }
+
+  function freeBadge(id, n, shortWhy) {
     const e = $(id);
     // More trains asked for than were landed (a storm, a port lost): say how many short
     e.textContent = n < 0 ? `${-n} short` : n + ' free';
-    e.title = n < 0 ? 'Fewer trains were landed than the sectors ask for: each sector gets a share. Lower some, or clear more ports' : '';
+    e.title = n < 0 ? (shortWhy || 'Fewer trains were landed than the sectors ask for: each sector gets a share. Lower some, or clear more ports') : '';
     e.classList.toggle('have', n > 0);
     e.classList.toggle('short', n < 0);
   }
@@ -453,14 +465,18 @@ const UI = (() => {
     $('#date').textContent = date;
     $('#day').textContent = `Day ${Math.min(st.day, st.lastDay)} of ${st.lastDay} · ${DIFFICULTY[st.level].name}`;
     $('#objectives').innerHTML = OBJECTIVES.map(id => `<span class="obj ${st.nodes[id].captured ? 'done' : ''}">${st.nodes[id].captured ? '✅' : '🎯'} ${NODES[id].name}</span>`).join('');
-    freeBadge('#free-trains', Sim.freeTrains(st));
+    freeBadge('#free-trains', Sim.freeTrains(st), trainsShortWhy());
 
     const resting = Sim.freePool(st, 'trucks', TRUCK_COLUMNS);
     freeBadge('#free-trucks', resting);
     $('#free-trucks').textContent = `${resting} resting`;
     $('#free-trucks').title = `Resting columns: ${Math.round(st.restCond)}% condition. Columns not given to an army rest and recover ${TRUCK_REST}% a day. Take a worn column off an army, put a rested one on`;
     const fuel = Sim.fuelPlan(st);
-    $('#fuel-state').innerHTML = fuel.factor < 0.98 ? `<span class="free short" title="The mixes ask for more fuel than the ports landed today: every army gets ${Math.round(fuel.factor * 100)}% of the fuel it asked for, the rest of the train space goes to ammo">⛽ ${Math.round(fuel.factor * 100)}% of fuel</span>` : `<span class="free have" title="Fuel landed at the ports covers what the mixes ask for. The spare only helps an army whose line has room for more trains: a full line (like the one through Saint-Lô) can't carry it">⛽ ${t(fuel.landed - fuel.asked)} t spare ashore</span>`;
+    // Petrol in tons both ways: short (the mixes ask for more than landed) or spare (landed but not asked for)
+    const fuelGap = Math.round(fuel.landed - fuel.asked);
+    $('#fuel-state').innerHTML = fuelGap < 0
+      ? `<span class="free short" title="The mixes ask for more fuel than the ports landed today: every army gets ${Math.round(fuel.factor * 100)}% of the fuel it asked for, the rest of the train space goes to ammo">⛽ ${t(-fuelGap)} t short</span>`
+      : `<span class="free have" title="Fuel landed at the ports covers what the mixes ask for. The spare only helps an army whose line has room for more trains: a full line (like the one through Saint-Lô) can't carry it">⛽ ${t(fuelGap)} t spare ashore</span>`;
     freeBadge('#free-engineers', Sim.freePool(st, 'engineers', ENGINEERS));
     freeBadge('#free-bombers', Sim.freePool(st, 'bombers', BOMBER_GROUPS - st.bombersLost));
 

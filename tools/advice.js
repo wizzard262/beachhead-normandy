@@ -65,6 +65,34 @@ function check(name, ok, detail) {
   });
   check('no fuel at the front: green mix is the most fuel', rec.includes('4:1'), rec);
 
+  // The petrol badge above the mixes: tons both ways, never a percentage
+  const badge = await page.evaluate(() => {
+    const read = mix => {
+      Game.restart();
+      // Stations repaired so every landed train gets through, then every army on the same mix
+      Game.state.nodes.caen.cond = 100;
+      Game.state.nodes.stlo.cond = 100;
+      Game.state.sectors.forEach(s => { s.fuelMix = mix; });
+      Game.forecast = Sim.forecast(Game.state);
+      UI.update();
+      return document.querySelector('#fuel-state').textContent;
+    };
+    return { short: read(80), spare: read(20) };
+  });
+  check('petrol badge shows tons short', /^⛽ [\d,]+ t short$/.test(badge.short), badge.short);
+  check('petrol badge shows tons spare', /^⛽ [\d,]+ t spare ashore$/.test(badge.spare), badge.spare);
+
+  // Trains short in a storm: the badge says the landings change and why
+  const trainsBadge = await page.evaluate(() => {
+    Game.restart();
+    Game.state.storm = 3;
+    Game.forecast = Sim.forecast(Game.state);
+    UI.update();
+    const e = document.querySelector('#free-trains');
+    return { text: e.textContent, title: e.title };
+  });
+  check('trains short in a storm: badge says short and why', trainsBadge.text.endsWith('short') && trainsBadge.title.includes('Channel storm'), JSON.stringify(trainsBadge));
+
   check('no errors on the page', errors.length === 0, errors.join('\n'));
   console.log(failed ? `\n${failed} failed` : '\nall passed');
   await browser.close();

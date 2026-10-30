@@ -165,6 +165,13 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - When trains run past a station to the end of the track, the train leg and the truck leg now share their space by distance, so an 8 km truck hop is short next to a 102 km train run
 - Assumption: a leg never gets narrower than its label, so a very short hop still has a readable label
 
+## 20. Petrol badge in tons both ways; why trains are short
+
+- Steve: the badge above the mixes sometimes says "⛽ 84% of fuel" and sometimes "… t spare"; and why are we short of trains when we have a fixed number?
+- The petrol badge is now tons both ways: "⛽ 320 t short" (red) or "⛽ 1,913 t spare ashore" (green). The petrol advice says tons too. It used to show "spare" with a minus number just under 100%
+- Trains are not a fixed number: they are the trainloads the ports land each day. Storms cut the beaches to a quarter, the autumn weather wears them down from day 35, and cleared ports add more. When the armies ask for more than lands, the 🚂 Trains badge says "N short"
+- Its hover now says this, with today's landings, what the armies ask for, and what is cutting the landings (storm, autumn weather)
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -172,4 +179,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 70 min | Prompts 17–19: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale |
+| 4 | 2026-10-30 | about 80 min | Prompts 17–20: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short |
