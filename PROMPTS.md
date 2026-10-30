@@ -158,6 +158,13 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - Balance sweep (150 games per strategy) before → after, normal level: pulse 73% → 69%, build4 58% → 56%, Red Ball only 81% → 83%, rest only 95% → 94%, idle 0% → 0%. Easy and hard much the same; leaving everything alone still loses
 - New test fingerprint `5c0868a0`
 
+## 19. Truck distance the same everywhere, legs drawn to scale
+
+- Steve: the Trucks column said 20 km but the truck arrow said 8 km, and the arrow was far too long for 8 km
+- The Trucks column and the truck advice now show the real distance (8 km), like the arrow. Rules unchanged: a truck trip still counts at least 20 km (loading and unloading)
+- When trains run past a station to the end of the track, the train leg and the truck leg now share their space by distance, so an 8 km truck hop is short next to a 102 km train run
+- Assumption: a leg never gets narrower than its label, so a very short hop still has a readable label
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -165,4 +172,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 60 min | Prompts 17–18: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line |
+| 4 | 2026-10-30 | about 70 min | Prompts 17–19: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale |

@@ -148,7 +148,7 @@ const UI = (() => {
       });
       const trucks = stepper('🚚 Trucks', () => sec.trucks, v => Sim.moveTrucks(st, sec, v - sec.trucks), () => free('trucks', TRUCK_COLUMNS), () => {
         const c = Math.round(sec.truckCond), col = condColour(c, 40);
-        return `<span class="dayrow" title="Condition of this army's truck columns: worn trucks carry less"><span>🔧</span><span class="bar"><i style="width:${c}%;background:${col}"></i></span><span class="${c <= 40 ? 'warn' : ''}">${c}%</span></span>${t(Sim.truckCapacity(st, sec))} t a day<br>over ${t(Math.max(20, Sim.gap(st, sec)))} km`;
+        return `<span class="dayrow" title="Condition of this army's truck columns: worn trucks carry less"><span>🔧</span><span class="bar"><i style="width:${c}%;background:${col}"></i></span><span class="${c <= 40 ? 'warn' : ''}">${c}%</span></span>${t(Sim.truckCapacity(st, sec))} t a day<br>over ${t(Sim.gap(st, sec))} km`;
       });
       const redBall = el('button', 'redball', '🔴 Red Ball');
       redBall.title = `The Red Ball Express: this army's trucks drive ${RED_BALL_SPEED}× as far on one-way roads, but wear faster, and the other armies' trucks carry ${Math.round((1 - RED_BALL_DRAIN) * 100)}% less`;
@@ -369,7 +369,7 @@ const UI = (() => {
       const more = Math.ceil((f.need - f.truckCap) / Math.max(1, f.perTruck));
       // Engineers only help when the railhead is a fair way back; trucks always drive at least 20 km
       const closer = f.gap > 20 ? ', or more <b>engineers</b> to bring the railhead closer' : '';
-      return [tone(f.truckRatio), `🚚 Trucks carry ${t(f.truckCap)} of the ${t(f.need)} t a day the front uses, over ${t(Math.max(20, f.gap))} km. Add <b>${more}</b> truck${more > 1 ? 's' : ''}${source(sec, 'trucks', more)}${closer}.`];
+      return [tone(f.truckRatio), `🚚 Trucks carry ${t(f.truckCap)} of the ${t(f.need)} t a day the front uses, over ${t(f.gap)} km. Add <b>${more}</b> truck${more > 1 ? 's' : ''}${source(sec, 'trucks', more)}${closer}.`];
     }
     if (f.trainRatio < 1 && depotDays < 3) {
       const more = Math.ceil((f.trainNeed - f.trainTons) / TRAIN_TONS);
@@ -395,7 +395,8 @@ const UI = (() => {
   function pipeHTML(sec) {
     const f = flows(sec), rh = Sim.railhead(st, sec);
     const weakest = Math.min(f.trainRatio, f.truckRatio);
-    const seg = (mode, r, label, sub, neck) => `<div class="pipe-seg ${mode} ${tone(r)}"><span class="flow">${label}</span><i></i><span class="sub">${sub}</span>${neck && r < 1 && r === weakest ? '<span class="neck">narrowest</span>' : ''}</div>`;
+    // km: when the train extension and the truck leg share a cell, each gets a width in proportion to its distance
+    const seg = (mode, r, label, sub, neck, km) => `<div class="pipe-seg ${mode} ${tone(r)}"${km !== undefined && km > 0 ? ` style="flex: ${Math.max(1, km)} 1 auto"` : ''}><span class="flow">${label}</span><i></i><span class="sub">${sub}</span>${neck && r < 1 && r === weakest ? '<span class="neck">narrowest</span>' : ''}</div>`;
     // Icon, bar (full = 3 days of advancing), then days in hand: the same as the map badges
     const days = (v, c, cls) => `<span class="dayrow"><span>${c}</span><span class="bar ${cls}"><i style="width:${Math.min(100, v / 3 * 100)}%"></i></span><span class="${v < 1 ? 'warn' : ''}">${v.toFixed(1)} d</span></span>`;
     const past = rh.laid >= 1;
@@ -404,8 +405,8 @@ const UI = (() => {
       ${seg('train', f.trainRatio, `🚂 ${t(f.trainTons)} t/d`, f.lineShort ? '<span class="warn">line limit</span>' : `needs ${t(f.trainNeed)}`, true)}
       <div class="pipe-node" title="${past ? `Trains run on ${t(rh.laid)} km past ${NODES[rh.node].name}; the depot is at the end of the track` : `The depot is at ${NODES[rh.node].name}`}"><b>${NODES[rh.node].name}</b>${health(rh.node)}<small>⛽ ${t(sec.depot.fuel)}</small><small>💥 ${t(sec.depot.ammo)}</small></div>
       <div class="pipe-pair" title="Train to the end of the track, then trucks to the front">
-        ${past ? seg('train extend', f.trainRatio, `🚂 +${t(rh.laid)} km`, 'to track end', false) : ''}
-        ${seg('truck', f.truckRatio, `🚚 ${t(f.truckCap)} t/d`, `${t(f.gap)} km`, true)}
+        ${past ? seg('train extend', f.trainRatio, `🚂 +${t(rh.laid)} km`, 'to track end', false, rh.laid) : ''}
+        ${seg('truck', f.truckRatio, `🚚 ${t(f.truckCap)} t/d`, `${t(f.gap)} km`, true, past ? f.gap : 0)}
       </div>
       <div class="pipe-node"><b>Front</b><small>${days(f.daysF, '⛽', 'fuel')}</small><small>${days(f.daysA, '💥', 'ammo')}</small><small>uses ${t(f.need)}/d</small></div>
       ${nextStation(sec)}`;
