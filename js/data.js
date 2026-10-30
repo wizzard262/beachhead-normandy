@@ -31,6 +31,7 @@ const RED_BALL_DRAIN = 0.9;     // the other armies' trucks carry this share (ro
 
 // Fuel is the crisis: the ports land plenty of ammunition but only so much petrol
 const FUEL_SHARE = 0.55;        // most of the landed tonnage that can be fuel; the rest is ammo and everything else
+const FUEL_DUMP_MAX = 15000;   // petrol landed but not carried forward piles up in the beach dump, up to this many tons
 const CONVERT_KM = 2.6;           // bombed track repaired per engineer battalion per day (the bridges take longer: see BRIDGES)
 const REPAIR = 6;               // station condition repaired per battalion per day
 const BOMBER_FUEL = 25;         // tons per bomber group per day, from the sector's depot

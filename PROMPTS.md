@@ -197,6 +197,17 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - The balance sweep's players now put free trains on lines with room each morning (as a person would). Normal: pulse 79%, build4 70%, Red Ball only 80%, rest only 95%; leaving everything alone still loses. New fingerprint `d670beb5`
 - New tests: each day starts with no army over its line; line takes is a whole number rounded up; the + button is off on a full line
 
+## 24. Spare petrol piles up in a beach dump
+
+- Steve: how do I make sure the armies get the spare petrol ashore? Isn't it wasted, or does it wait?
+- It used to be wasted: "spare" was only what the ports could have landed that day. Steve chose: let it pile up
+- Petrol landed but not carried forward now goes into a **beach dump** (up to 15,000 t). On days the mixes ask for more fuel than lands (storms, fuel-heavy mixes), the trains draw on the dump first
+- The badge above the mixes says "⛽ 2,429 t in the beach dump" (what is left after today's trains) or "⛽ 320 t short"; the shortage report and advice count the dump too
+- It only helps armies whose lines have room for more trains: set their mix toward ⛽
+- Balance sweep, normal: pulse 79% → 88%, build4 70% → 66%, Red Ball only 80% → 88%, rest only 95% → 93%; leaving everything alone still loses. A 5,000 t limit played the same. New fingerprint `4fb3ecea`
+- Steve's tip: pushing the British & Canadians hard first opens the Channel ports (Le Havre, then Antwerp) sooner, and that works well
+- New test: unused petrol fills the dump (never past its limit) and a storm draws it down
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -204,4 +215,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 115 min | Prompts 17–23: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes |
+| 4 | 2026-10-30 | about 125 min | Prompts 17–24: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump |

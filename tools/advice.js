@@ -80,7 +80,7 @@ function check(name, ok, detail) {
     return { short: read(80), spare: read(20) };
   });
   check('petrol badge shows tons short', /^⛽ [\d,]+ t short$/.test(badge.short), badge.short);
-  check('petrol badge shows tons spare', /^⛽ [\d,]+ t spare ashore$/.test(badge.spare), badge.spare);
+  check('petrol badge shows the beach dump in tons', /^⛽ [\d,]+ t in the beach dump$/.test(badge.spare), badge.spare);
 
   // Trains short in a storm: the badge says the landings change and why
   const trainsBadge = await page.evaluate(() => {

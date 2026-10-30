@@ -353,7 +353,7 @@ const UI = (() => {
     const fuel = Sim.fuelPlan(st);
     if (fuel.factor < FUEL_SHORT && f.daysF < 2 && f.daysF < f.daysA) {
       const bombers = sec.bombers ? `, take <b>bombers</b> off (each burns ${BOMBER_FUEL} t a day)` : '';
-      return ['bad', `⛽ Petrol is the limit: the armies asked for ${t(fuel.asked - fuel.landed)} t more fuel than came ashore, so more trains, trucks or the Red Ball won't help. <b>Hold</b> (armour then burns about a tenth)${bombers}, or send port companies to a port.`];
+      return ['bad', `⛽ Petrol is the limit: the armies asked for ${t(fuel.asked - fuel.have)} t more fuel than is ashore, so more trains, trucks or the Red Ball won't help. <b>Hold</b> (armour then burns about a tenth)${bombers}, or send port companies to a port.`];
     }
     const depotDays = Math.min(f.depotDaysF, f.depotDaysA);
     if (sec.truckCond < 45 && f.truckRatio < 1) {
@@ -474,11 +474,11 @@ const UI = (() => {
     $('#free-trucks').textContent = `${resting} resting`;
     $('#free-trucks').title = `Resting columns: ${Math.round(st.restCond)}% condition. Columns not given to an army rest and recover ${TRUCK_REST}% a day. Take a worn column off an army, put a rested one on`;
     const fuel = Sim.fuelPlan(st);
-    // Petrol in tons both ways: short (the mixes ask for more than landed) or spare (landed but not asked for)
-    const fuelGap = Math.round(fuel.landed - fuel.asked);
+    // Petrol in tons both ways: short (the mixes ask for more than is ashore) or what will be left in the beach dump
+    const fuelGap = Math.round(fuel.have - fuel.asked);
     $('#fuel-state').innerHTML = fuelGap < 0
-      ? `<span class="free short" title="The mixes ask for more fuel than the ports landed today: every army gets ${Math.round(fuel.factor * 100)}% of the fuel it asked for, the rest of the train space goes to ammo">⛽ ${t(-fuelGap)} t short</span>`
-      : `<span class="free have" title="Fuel landed at the ports covers what the mixes ask for. The spare only helps an army whose line has room for more trains: a full line (like the one through Saint-Lô) can't carry it">⛽ ${t(fuelGap)} t spare ashore</span>`;
+      ? `<span class="free short" title="The mixes ask for more fuel than landed today and the beach dump hold: every army gets ${Math.round(fuel.factor * 100)}% of the fuel it asked for, the rest of the train space goes to ammo">⛽ ${t(-fuelGap)} t short</span>`
+      : `<span class="free have" title="Petrol not carried forward waits in the beach dump (up to ${t(FUEL_DUMP_MAX)} t) and is used on days the mixes ask for more than lands. Only an army whose line has room for more trains can draw on it: set its mix toward ⛽">⛽ ${t(fuel.dumpAfter)} t in the beach dump</span>`;
     freeBadge('#free-engineers', Sim.freePool(st, 'engineers', ENGINEERS));
     freeBadge('#free-bombers', Sim.freePool(st, 'bombers', BOMBER_GROUPS - st.bombersLost));
 

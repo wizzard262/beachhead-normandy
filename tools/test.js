@@ -6,7 +6,7 @@ load('data.js'); load('sim.js');
 
 // Fingerprint of 30 full games per strategy below. It changes only when the rules or numbers change.
 // After a deliberate rules change, run the tests and paste the new value it prints here
-const FINGERPRINT = 'd670beb5';
+const FINGERPRINT = '4fb3ecea';
 
 let failed = 0;
 function check(name, fn) {
@@ -188,6 +188,22 @@ check('line takes is a whole number, rounded up', () => {
     const got = Sim.forecast(st)[sec.id].trains, takes = Sim.lineTakes(st, sec);
     assert(Number.isInteger(takes) && takes >= got - 1e-6 && takes < got + 1, `${sec.id}: ${got.toFixed(2)} get through, line takes ${takes}`);
   }
+});
+
+check('unused petrol piles up in the beach dump and is drawn on later', () => {
+  if (typeof FUEL_DUMP_MAX === 'undefined') return;   // Railhead has no beach dump
+  const st = Sim.newGame(5);
+  // Ammo-heavy mixes leave petrol ashore: the dump fills, never past its limit
+  for (const sec of st.sectors) sec.fuelMix = 20;
+  for (let day = 0; day < 8; day++) Sim.endDay(st);
+  assert(st.fuelDump > 0, 'the dump stayed empty');
+  assert(st.fuelDump <= FUEL_DUMP_MAX, `the dump holds ${st.fuelDump} t, over ${FUEL_DUMP_MAX}`);
+  // A storm with fuel-heavy mixes: the trains draw on the dump
+  const before = st.fuelDump;
+  for (const sec of st.sectors) sec.fuelMix = 80;
+  st.storm = 3;
+  Sim.endDay(st);
+  assert(st.fuelDump < before, `the dump went from ${before} t to ${st.fuelDump} t in a storm`);
 });
 
 check('an army behind its neighbour catches up (flanking)', () => {

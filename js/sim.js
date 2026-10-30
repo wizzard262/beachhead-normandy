@@ -48,7 +48,7 @@ const Sim = (() => {
       reserves: [], queue: [], marching: [],
       bombersLost: 0,
       soviet: { pool: 10, buildup: null, lastTarget: null },
-      storm: 0, ports: {}, bridges: [], redBall: null, restCond: 100, fuelFactor: 1,
+      storm: 0, ports: {}, bridges: [], redBall: null, restCond: 100, fuelFactor: 1, fuelDump: 0,
       report: [], events: { attacks: [], raids: [] },
       intel: null, won: false, lost: false, wonDay: null,
     };
@@ -186,7 +186,8 @@ const Sim = (() => {
     sec.trucks += delta;
   }
 
-  // Fuel landed against fuel asked for: if the mixes ask for more petrol than came ashore, every army gets a share
+  // Fuel landed today plus the beach dump, against fuel asked for: if the mixes ask for more petrol than that, every army gets a share.
+  // What isn't carried forward stays in the dump (up to its limit) for another day
   function fuelPlan(st, got = allocateTrains(st)) {
     let asked = 0;
     for (const sec of st.sectors) {
@@ -194,7 +195,13 @@ const Sim = (() => {
       asked += supply * TRAIN_TONS * sec.fuelMix / 100;
     }
     const landed = landing(st).total * TRAIN_TONS * FUEL_SHARE;
-    return { asked, landed, factor: asked > landed ? landed / asked : 1 };
+    const dump = st.fuelDump || 0;
+    // Petrol the trains can draw on today: today's landings and the dump
+    const have = landed + dump;
+    const used = Math.min(asked, have);
+    // The dump after the trains leave
+    const dumpAfter = Math.min(FUEL_DUMP_MAX, have - used);
+    return { asked, landed, dump, have, dumpAfter, factor: asked > have ? have / asked : 1 };
   }
 
   // Trains each sector asks for today: supply trains plus troop trains queued for it
@@ -481,7 +488,8 @@ const Sim = (() => {
     const got = allocateTrains(st);
     const fuel = fuelPlan(st, got);
     st.fuelFactor = fuel.factor;
-    if (fuel.factor < 0.95) rep.push(`⛽ Fuel shortage: the armies asked for ${Math.round(fuel.asked).toLocaleString()} t of petrol, only ${Math.round(fuel.landed).toLocaleString()} t came ashore. The trains carried ammo instead.`);
+    st.fuelDump = fuel.dumpAfter;
+    if (fuel.factor < 0.95) rep.push(`⛽ Fuel shortage: the armies asked for ${Math.round(fuel.asked).toLocaleString()} t of petrol, only ${Math.round(fuel.have).toLocaleString()} t was ashore. The trains carried ammo instead.`);
     for (const sec of st.sectors) {
       let trains = got[sec.id];
       const mine = st.queue.filter(q => q.sector === sec.id);
