@@ -95,6 +95,10 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - The British line turned back west to reach Antwerp, so the drawn front line passed east of it. Antwerp now sits north-east of Brussels on the board (name to its left, clear of the End day button), so it stays on the German side until it's taken
 - Also checked: every + and − button matches what's free (+ greys out when nothing is free to give; left as it is)
 
+## 10. "3.5306122448979593 free"
+
+- The trains count showed a long fraction: a division part-way through loading holds the rest of its trains. The free count now rounds down to whole trains (also in Railhead)
+
 ## Sessions
 
 | # | Date | Length | What we did |
