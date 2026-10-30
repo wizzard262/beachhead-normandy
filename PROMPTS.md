@@ -236,6 +236,12 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - The report used to show 2 lines and a "+ N more" link; it now lists every line, recon first. (Railhead already listed everything)
 - New check: a 5-line report shows all 5 lines and no "more" link
 
+## 29. Front line drawn past the towns it has taken
+
+- Steve: Aachen was taken but the front was still drawn in front of it
+- The rules were right (Aachen was taken); the drawing was wrong. The red line was smoothed by cutting each corner, so at a sharp bend (an army far ahead of its neighbours) it passed west of the army's own front point, leaving Aachen on the German side
+- The front now passes through every army's front point (a Catmull-Rom curve), and each point is drawn 12 px towards the Germans, so a town just taken sits on our side. The shading, the teeth and the badge tails all follow the same line
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -243,4 +249,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 155 min | Prompts 17–28: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump; port links drawn; strength vs the Germans; smooth port links, prompts page full width; full report |
+| 4 | 2026-10-30 | about 165 min | Prompts 17–29: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump; port links drawn; strength vs the Germans; smooth port links, prompts page full width; full report; front drawn past taken towns |
