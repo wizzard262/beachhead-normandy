@@ -172,6 +172,15 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - Trains are not a fixed number: they are the trainloads the ports land each day. Storms cut the beaches to a quarter, the autumn weather wears them down from day 35, and cleared ports add more. When the armies ask for more than lands, the 🚂 Trains badge says "N short"
 - Its hover now says this, with today's landings, what the armies ask for, and what is cutting the landings (storm, autumn weather)
 
+## 21. Armies left behind catch up (flanking); Paris no longer an objective
+
+- Steve: pushing one army works, but the others never go faster to catch up, so they can't make it in time. And why is Paris an objective when you have to go through it for the next one?
+- Steve chose flanking: an army behind its neighbour finds the Germans in front pulling back so they aren't cut off. It moves 1% faster for each 1% of its line it is behind its furthest-on neighbour, up to +30%. Its status says "(Germans falling back)". How to play explains it
+  - Neighbours are the armies next to it on the map: British & Canadian, US First, US Third. Behind is measured as a share of each line, as the lines differ in length
+- **Paris dropped from the objectives**: US First Army takes it on the way to Aachen anyway. The objectives are Antwerp, Aachen and Metz; the result screen still gives the real Paris date
+- Balance sweep (150 games per strategy), normal: pulse 69% → 84%, build4 56% → 67%, Red Ball only 83% → 89%, rest only 94% → 98%; leaving everything alone still loses (0%). Hard: pulse 19% → 33%. +60% flanking was tried first and was far too easy (normal pulse 95%)
+- New test: an army behind its neighbour goes further on the same day. New fingerprint `1f471a43`
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -179,4 +188,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 80 min | Prompts 17–20: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short |
+| 4 | 2026-10-30 | about 95 min | Prompts 17–21: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective |

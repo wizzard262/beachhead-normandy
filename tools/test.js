@@ -6,7 +6,7 @@ load('data.js'); load('sim.js');
 
 // Fingerprint of 30 full games per strategy below. It changes only when the rules or numbers change.
 // After a deliberate rules change, run the tests and paste the new value it prints here
-const FINGERPRINT = '5c0868a0';
+const FINGERPRINT = '1f471a43';
 
 let failed = 0;
 function check(name, fn) {
@@ -142,6 +142,22 @@ check('a unit cannot be sent without free trains', () => {
 check('day 1 is the campaign start date', () => {
   const expected = START_DATE.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
   assert(Sim.dateText(1) === expected, `day 1 shows ${Sim.dateText(1)}`);
+});
+
+check('an army behind its neighbour catches up (flanking)', () => {
+  if (typeof FLANK_PER === 'undefined') return;   // Railhead has no flanking
+  // The same day twice: once with US First level with US Third, once far ahead of it
+  const advance = lead => {
+    const st = Sim.newGame(3);
+    const first = st.sectors.find(s => s.id === 'centre'), third = st.sectors.find(s => s.id === 'south');
+    if (lead) first.front = lineEnd(first) * 0.6;
+    const before = third.front;
+    Sim.endDay(st);
+    return third.front - before;
+  };
+  const level = advance(false), behind = advance(true);
+  assert(behind > level * 1.1, `US Third went ${behind.toFixed(1)} km when behind, ${level.toFixed(1)} km when level`);
+  assert(Object.values(Sim.flankLead(Sim.newGame(3))).every(v => v >= 0), 'how far behind is never negative');
 });
 
 console.log(failed ? `\n${failed} failed` : '\nall passed');

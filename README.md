@@ -2,7 +2,7 @@
 
 August 1944. The Allies have broken out of Normandy. You run supply for three armies racing for Germany. The generals fight; you decide what reaches them.
 
-Take Paris, Antwerp, Aachen and Metz before the deadline:
+Take Antwerp, Aachen and Metz before the deadline (US First Army passes through Paris on its way to Aachen):
 
 - **Everything comes ashore** at the beaches; Channel storms cut it; Cherbourg opens later; Antwerp only helps once its estuary is cleared
 - **Trains** run on repaired track; the French railways were bombed before D-Day

@@ -109,6 +109,19 @@ const Sim = (() => {
 
   function sectorDef(id) { return SECTORS.find(s => s.id === id); }
 
+  // For each army, how far it is behind its furthest-on neighbour, as a share of its line (0 when level or ahead).
+  // Neighbours are the armies next to it on the map: British & Canadian, US First, US Third
+  function flankLead(st) {
+    const done = st.sectors.map(sec => sec.front / lineEnd(sec.id));
+    const lead = {};
+    st.sectors.forEach((sec, i) => {
+      // Its neighbours' progress: the army either side of it
+      const sides = [done[i - 1], done[i + 1]].filter(v => v !== undefined);
+      lead[sec.id] = Math.max(0, Math.max(...sides) - done[i]);
+    });
+    return lead;
+  }
+
   // km from the beaches to the end of a sector's line (its objective)
   const lineEnd = id => LINES[id][LINES[id].length - 1];
 
@@ -503,7 +516,9 @@ const Sim = (() => {
     }
     st.restCond = Math.min(100, st.restCond + TRUCK_REST);
 
-    // 6. Fighting: German attack first, then the advance
+    // 6. Fighting: German attack first, then the advance.
+    // How far behind each army is: the furthest-on neighbour's share of its line taken, less this army's (worked out before anyone moves)
+    const behind = flankLead(st);
     for (const sec of st.sectors) {
       const name = SECTOR_NAME(sec.id);
       let halted = false, slowed = false;
@@ -559,7 +574,9 @@ const Sim = (() => {
       const push = r <= SHORT_SUPPLY ? 0 : (r - SHORT_SUPPLY) / (1 - SHORT_SUPPLY);
       const inHand = Math.min(sec.stock.fuel / Math.max(1, n.fuel), sec.stock.ammo / Math.max(1, n.ammo));
       const stocked = r >= 1 ? 1 + WELL_SUPPLIED * Math.min(4, inHand) : 1;
-      let km = Math.min(lim.mobility, lim.combat) * push * stocked * (0.85 + R() * 0.3) * (slowed ? 0.5 : 1);
+      // Behind a neighbour: the Germans in front fall back, so the army catches up
+      const flank = 1 + Math.min(FLANK_MAX, behind[sec.id] * FLANK_PER);
+      let km = Math.min(lim.mobility, lim.combat) * push * stocked * flank * (0.85 + R() * 0.3) * (slowed ? 0.5 : 1);
       sec.limit = r < 0.98 ? 'supply' : lim.combat < lim.mobility ? 'resistance' : 'mobility';
       km = Math.min(km, end - sec.front);
       sec.front += km;
@@ -569,7 +586,7 @@ const Sim = (() => {
         const short = rF < rA ? 'fuel' : 'ammo';
         sec.status = r < 0.1 ? `Stalled: out of ${short}` : `Slowed: short of ${short}`;
         if (r < 0.6) rep.push(`🔻 ${name}: ${sec.status.toLowerCase()} at the front (${Math.round(km)} km).`);
-      } else sec.status = `Advancing ${Math.round(km)} km`;
+      } else sec.status = `Advancing ${Math.round(km)} km` + (flank > 1.1 ? ' (Germans falling back)' : '');
     }
 
     // 7. Stations captured: the Germans wreck what they had time to
@@ -714,7 +731,7 @@ const Sim = (() => {
   return {
     landing, trainsToday, portTrains, bridgeBlock, moveTrucks, fuelPlan,
     LINES, LINKS, linkKey, lineEnd, troopTrains, newGame, endDay, needs, power, limits, railhead, railheadIndex, gap,
-    truckCapacity, forecast, freePool, freeTrains, sendUnit, cancelUnit, dateText, sectorDef,
+    truckCapacity, forecast, freePool, freeTrains, sendUnit, cancelUnit, dateText, sectorDef, flankLead,
   };
 })();
 

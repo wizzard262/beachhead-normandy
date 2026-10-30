@@ -151,6 +151,8 @@ const MAX_SPEED = 34;
 const COMBAT_SPEED = 70;    // km a day = COMBAT_SPEED x attack power / German resistance
 const SHORT_SUPPLY = 0.4;   // below this share of a day's needs a sector can't advance at all; above it, speed climbs to full
 const WELL_SUPPLIED = 0.08; // speed bonus for each day of fuel and ammo still in hand after today (up to 4 days: +32%)
+const FLANK_PER = 1;          // an army behind its neighbour goes faster: the Germans in front pull back so they aren't cut off.
+const FLANK_MAX = 0.3;       // ... +1% speed for each 1% of its line it is behind (share of the line), up to +30%
 const HOLD_DEFENCE = 1.6;   // a sector on Hold is dug in: its defence counts this much more
 // What a sector on Hold gets in return for the days it doesn't advance
 const STOCK_DAYS = 3;       // days of advancing the trucks keep at the front while it advances
@@ -171,7 +173,7 @@ const REINFORCEMENTS = [
   { day: 27, type: 'pz' }, { day: 32, type: 'inf' },
 ];
 
-const OBJECTIVES = ['paris', 'antwerp', 'aachen', 'metz'];
+const OBJECTIVES = ['antwerp', 'aachen', 'metz'];   // Paris is on US First Army's way to Aachen, so it isn't one of its own
 // The German side
 const SOVIET_GROWTH = 10;        // German reserves a day, plus SOVIET_GROWTH_PER_DAY x the day
 const SOVIET_GROWTH_PER_DAY = 0.3;
