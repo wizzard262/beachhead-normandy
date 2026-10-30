@@ -109,6 +109,12 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - On the result screen, show how each objective compares with the real campaign as days ahead or behind (e.g. "+9 days ahead", "−2 days behind", "the same day") instead of "you: day 34"
 - Objectives not taken still show only the real date
 
+## 13. The logistics quote
+
+- Put the quote "Amateurs talk about tactics, but professionals study logistics." and its author (General Robert H. Barrow, US Marine Corps) in the gap left of the How to play button, in both games
+- Don't let it wrap: it stays on one line and gets smaller to fit; when the gap is too small to read it (smaller laptops, phones) it is hidden, so the header never grows
+- Chosen because it is reliably sourced (Barrow, about 1980); the three-part "tactics, strategy, logistics" version has no good source
+
 ## Sessions
 
 | # | Date | Length | What we did |
