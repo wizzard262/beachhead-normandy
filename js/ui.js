@@ -31,9 +31,21 @@ const UI = (() => {
     return `<svg class="unit-icon" viewBox="0 0 24 16" width="21" height="14" aria-hidden="true">${parts}</svg>`;
   }
 
+  // A small bridge like the ones on the map, on a blueprint-blue chip: working (white deck) or blown (broken red deck with a cross)
+  function bridgeIcon(state) {
+    const blown = state === 'blown';
+    const ink = blown ? '#ff8a7a' : '#eef4ff';
+    const deck = blown
+      ? 'M5 5H11M13 5H19M5 11H11M13 11H19'
+      : 'M5 5H19M5 11H19';
+    const cross = blown ? '<path d="M10 4L14 12M14 4L10 12" stroke="#ff5a4a" stroke-width="1.8"/>' : '';
+    return `<svg class="bridge-icon" viewBox="0 0 24 16" width="24" height="16" aria-hidden="true"><rect width="24" height="16" rx="3" fill="#2a5f9a"/><path d="${deck}M5 5L2 2M19 5L22 2M5 11L2 14M19 11L22 14" stroke="${ink}" stroke-width="1.8" fill="none"/>${cross}</svg>`;
+  }
+
   function init(state, changed) {
     st = state; onChange = changed;
     buildSectors();
+    $('#bridge-legend').innerHTML = `${bridgeIcon('working')}working bridge · ${bridgeIcon('blown')}blown bridge (rebuild to use) · `;
     $('#unit-legend').innerHTML = UNIT_ORDER.map(u => `${unitIcon(u)} ${UNIT_TYPES[u].short}`).join(' · ') + ': divisions wait at the beaches';
     $('#help-btn').onclick = $('#help-btn2').onclick = () => show('#help');
     $('#new-btn').onclick = () => { if (confirm('Start a new game?')) window.Game.restart(); };
@@ -186,9 +198,9 @@ const UI = (() => {
     const br = Sim.bridgeBlock(st, key);
     let s = `${left} km of track to repair to ${NODES[line[rh.index + 1]].name}`;
     if (br && br.state === 'blown' && st.links[key].done >= Sim.LINKS[key].len * br.at - 0.5) {
-      return `🌉 rebuilding the ${br.river} bridge: ${Math.round(br.done)} of ${br.work} battalion-days`;
+      return `${bridgeIcon('blown')} rebuilding the ${br.river} bridge: ${Math.round(br.done)} of ${br.work} battalion-days`;
     }
-    if (br && br.state === 'blown') s += ` · 🌉 ${br.river} bridge down (${br.work} days' work)`;
+    if (br && br.state === 'blown') s += ` · ${bridgeIcon('blown')} ${br.river} bridge down (${br.work} days' work)`;
     if (left === 0 && next.captured && next.cond <= 0) s = `${NODES[line[rh.index + 1]].name} station needs repair`;
     else if (left === 0 && !next.captured) s = `${NODES[line[rh.index + 1]].name} not taken yet`;
     if (damaged.length) s += ` · ${damaged.length} station${damaged.length > 1 ? 's' : ''} damaged`;
@@ -289,7 +301,7 @@ const UI = (() => {
       const br = Sim.bridgeBlock(st, Sim.linkKey(lineNow[rhNow.index], lineNow[rhNow.index + 1]));
       if (br && br.state === 'blown' && f.gap > 60) {
         const left = br.work - br.done, eng = sec.engineers * (sec.posture === 'hold' ? HOLD_ENGINEERS : 1);
-        return ['bad', `🌉 The railhead is stuck at the blown <b>${br.river}</b> bridge: ${Math.round(left)} battalion-days of work, about ${eng ? Math.ceil(left / eng) : '∞'} days with ${sec.engineers} engineers. Add engineers, or set them to <b>🛤️ Track</b>.`];
+        return ['bad', `${bridgeIcon('blown')} The railhead is stuck at the blown <b>${br.river}</b> bridge: ${Math.round(left)} battalion-days of work, about ${eng ? Math.ceil(left / eng) : '∞'} days with ${sec.engineers} engineers. Add engineers, or set them to <b>🛤️ Track</b>.`];
       }
     }
     if (f.lineShort && f.trainRatio < 1) return ['bad', `🚧 The line only takes <b>${f.lineTakes.toFixed(1)}</b> trains a day${choke()}. Set engineers to <b>Station 🚉</b> so more get through.`];
@@ -530,7 +542,7 @@ const UI = (() => {
       const br = st.bridges[+id.slice(7)], L = Sim.LINKS[br.link];
       const where = `${br.river} bridge, ${NODES[L.a].name} – ${NODES[L.b].name}`;
       const state = { enemy: 'Behind German lines: it will probably be blown as they retreat', blown: `Blown: ${Math.round(br.done)} of ${br.work} battalion-days rebuilt. Trains stop here until it's done`, intact: 'Taken intact: trains can cross', rebuilt: 'Rebuilt: trains can cross' }[br.state];
-      return place(`<b>🌉 ${where}</b><br>${state}`);
+      return place(`<b>${bridgeIcon(br.state === 'blown' ? 'blown' : 'working')} ${where}</b><br>${state}`);
     }
     const n = st.nodes[id], N = NODES[id];
     const lines = [`<b>${N.name}</b>${OBJECTIVES.includes(id) ? ' 🎯 objective' : ''}`];

@@ -59,6 +59,7 @@
   .legend i { display: inline-block; vertical-align: middle; margin-right: 4px; }
   .lg-track { width: 22px; height: 4px; background: #eef4ff; box-shadow: 0 0 0 3px #2a5f9a; }
   .lg-broad { width: 22px; height: 0; border-top: 3px dashed rgba(255,190,170,.95); box-shadow: 0 0 0 3px #2a5f9a; }
+  .bridge-icon { vertical-align: middle; margin-right: 3px; }
   .lg-front { width: 22px; height: 4px; background: rgba(255,95,80,.95); box-shadow: 0 0 0 3px #2a5f9a; }
 
   #side { flex: 0 0 330px; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
@@ -232,7 +233,7 @@
     <button id="new-btn">New game</button>
     <a href="prompts.html" target="_blank" rel="noopener">prompts</a>
     <a href="screenshots.html" target="_blank" rel="noopener">screenshots</a>
-    <span id="ver">v7</span>
+    <span id="ver">v9</span>
   </div>
 </header>
 
@@ -251,7 +252,7 @@
       <span><i class="lg-track"></i>Repaired track</span>
       <span><i class="lg-broad"></i>Bombed track (repair to use)</span>
       <span><i class="lg-front"></i>Front line</span>
-      <span>🌉 bridge: red = blown, white = working · ⚑ Railhead · ■ big station · bar = condition · <b style="color:#a3291c">?</b> reported German build-up · hover a station for its stocks</span>
+      <span id="bridge-legend"></span><span>⚑ Railhead · bar = condition · <b style="color:#a3291c">?</b> reported German build-up · hover a station for its stocks</span>
       <span id="unit-legend"></span>
     </div>
   </div>
@@ -320,10 +321,10 @@
   </div>
 </div>
 
-<script src="js/data.js?v=7"></script>
-<script src="js/sim.js?v=7"></script>
-<script src="js/draw.js?v=7"></script>
-<script src="js/ui.js?v=7"></script>
-<script src="js/main.js?v=7"></script>
+<script src="js/data.js?v=9"></script>
+<script src="js/sim.js?v=9"></script>
+<script src="js/draw.js?v=9"></script>
+<script src="js/ui.js?v=9"></script>
+<script src="js/main.js?v=9"></script>
 </body>
 </html>

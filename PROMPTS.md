@@ -84,6 +84,11 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - The column counts overlapped ("2 resting" ran into Engineers): each column's count now sits under its name
 - No scrolling in the two top-right boxes: the report shows its two most important lines with "+ N more" to open the rest; ports are one line each; each division type is one line with short send buttons (Br, 1st, 3rd); the boxes grow instead of scrolling
 
+## 8. Legend
+
+- The legend's 🌉 emoji didn't match the bridges on the map: it now shows small drawn bridges like the map's, "working bridge" and "blown bridge (rebuild to use)"; the same pictures replace 🌉 in the engineer notes, the advice and the hover text
+- Removed "■ big station" from the legend: the town pictures on the map already show the big cities (also in Railhead)
+
 ## Sessions
 
 | # | Date | Length | What we did |

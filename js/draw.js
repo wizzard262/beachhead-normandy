@@ -52,6 +52,8 @@ const Draw = (() => {
     } else {
       w = box ? box.clientWidth : canvas.getBoundingClientRect().width; h = w * 425 / W;
     }
+    // Not laid out yet (no width or height): keep the last size rather than draw on nothing
+    if (!(w > 0) || !(h > 0)) return;
     H = Math.round(W * h / w);
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
