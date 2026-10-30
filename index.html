@@ -63,7 +63,7 @@
   .legend { flex: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; font-size: 12px; color: var(--muted); margin: 4px 2px 0; }
   .legend i { display: inline-block; vertical-align: middle; margin-right: 4px; }
   .lg-track { width: 22px; height: 4px; background: #eef4ff; box-shadow: 0 0 0 3px #2a5f9a; }
-  .lg-portlink { width: 22px; height: 0; border-top: 2px dashed rgba(238,244,255,.6); box-shadow: 0 0 0 3px #2a5f9a; }
+  .lg-portlink { width: 24px; height: 0; border-top: 3px dashed rgba(238,244,255,.8); box-shadow: 0 0 0 3px #2a5f9a; }
   .lg-broad { width: 22px; height: 0; border-top: 3px dashed rgba(255,190,170,.95); box-shadow: 0 0 0 3px #2a5f9a; }
   .bridge-icon { vertical-align: middle; margin-right: 3px; }
   .lg-front { width: 22px; height: 4px; background: rgba(255,95,80,.95); box-shadow: 0 0 0 3px #2a5f9a; }
@@ -127,6 +127,9 @@
   .forces b { color: var(--ink); }
   .force { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
   .coming { display: block; font-size: 11px; }
+  .strength { display: flex; flex-direction: column; gap: 1px; margin-top: 3px; font-size: 11px; white-space: nowrap; cursor: help; }
+  .strength .vs { display: block; width: 64px; height: 5px; border-radius: 3px; background: var(--bad); overflow: hidden; }
+  .strength .vs i { display: block; height: 100%; background: var(--good); }
   .unit-icon { flex: none; vertical-align: -2px; }
   .c-advice { grid-column: 2 / -1; margin-left: 8px; font-size: 13px; padding: 3px 8px; border-radius: 6px; }
   .c-advice.ok { background: rgba(63,122,58,.1); }
@@ -241,7 +244,7 @@
     <button id="new-btn">New game</button>
     <a href="prompts.html" target="_blank" rel="noopener">prompts</a>
     <a href="screenshots.html" target="_blank" rel="noopener">screenshots</a>
-    <span id="ver">v27</span>
+    <span id="ver">v28</span>
   </div>
 </header>
 
@@ -331,10 +334,10 @@
   </div>
 </div>
 
-<script src="js/data.js?v=27"></script>
-<script src="js/sim.js?v=27"></script>
-<script src="js/draw.js?v=27"></script>
-<script src="js/ui.js?v=27"></script>
-<script src="js/main.js?v=27"></script>
+<script src="js/data.js?v=28"></script>
+<script src="js/sim.js?v=28"></script>
+<script src="js/draw.js?v=28"></script>
+<script src="js/ui.js?v=28"></script>
+<script src="js/main.js?v=28"></script>
 </body>
 </html>

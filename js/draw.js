@@ -270,20 +270,29 @@ const Draw = (() => {
     }
   }
 
-  // Port links (see PORT_LINKS): faint and dashed until they carry trains, then solid like working track
+  // Port links (see PORT_LINKS): dashed until they carry trains, then solid like working track.
+  // They bend round so they don't run along the rivers (the Seine between Rouen and Paris, the Meuse near Liège)
+  const PORT_LINK_BENDS = { lehavre: [[0.47, 0.34]], antwerp: [[0.92, 0.15]] };
+  function portLinkStyle(used) {
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = K.ink;
+    ctx.globalAlpha = used ? 1 : 0.75;
+    ctx.lineWidth = used ? 4 : 3;
+    ctx.setLineDash(used ? [] : [9, 5]);
+  }
   function drawPortLinks(st) {
     const fc = (window.Game && window.Game.forecast) || {};
     for (const L of PORT_LINKS) {
-      const a = P[L.from], b = P[L.at];
       // In use: today some of that army's trains come from this port
       const from = (fc[L.sector] && fc[L.sector].from) || [];
       const used = from.some(x => x.ports.includes(L.port) && x.trains > 0.05);
-      ctx.lineCap = 'butt';
-      ctx.strokeStyle = used ? K.ink : K.soft;
-      ctx.lineWidth = used ? 2.5 : 1.5;
-      ctx.setLineDash(used ? [] : [4, 3]);
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-      ctx.setLineDash([]);
+      // From the port's station, round the bend, to where it joins the army's line
+      const route = [P[L.from], ...(PORT_LINK_BENDS[L.port] || []).map(b => px(...b)), P[L.at]];
+      portLinkStyle(used);
+      ctx.beginPath(); ctx.moveTo(route[0].x, route[0].y);
+      for (const p of route.slice(1)) ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
     }
   }
 
@@ -299,9 +308,11 @@ const Draw = (() => {
   function drawPorts(st) {
     for (const id of ['cherbourg', 'lehavre', 'antwerp']) {
       const p = portSpot(id), ps = st.ports[id], PT = PORTS[id];
+      // Le Havre's own line to Rouen, drawn like the port links
       if (id === 'lehavre') {
-        ctx.strokeStyle = K.soft; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
-        ctx.beginPath(); ctx.moveTo(p.x + 6, p.y + 2); ctx.lineTo(P.rouen.x - 8, P.rouen.y - 2); ctx.stroke(); ctx.setLineDash([]);
+        portLinkStyle(Sim.portTrains(st, 'lehavre') > 0);
+        ctx.beginPath(); ctx.moveTo(p.x + 6, p.y + 2); ctx.lineTo(P.rouen.x - 8, P.rouen.y - 2); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha = 1;
       }
       ctx.fillStyle = ps.taken ? K.townFill : K.enemyFill; ctx.strokeStyle = ps.taken ? K.ink : K.enemyInk; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(p.x, p.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();

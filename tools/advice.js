@@ -107,6 +107,13 @@ function check(name, ok, detail) {
   });
   check('full line: + is off and it says the whole trains it takes', full.plusOff === true && /line takes \d+(?!\.)/.test(full.note), JSON.stringify(full));
 
+  // Each army row compares our attack power with the Germans' and says the speed it allows and what holds it back
+  const strength = await page.evaluate(() => {
+    Game.restart();
+    return [...document.querySelectorAll('.strength')].map(e => e.textContent);
+  });
+  check('each army shows us vs the Germans, speed and brake', strength.length === 3 && strength.every(x => /⚔️ \d+ vs \d+\d* km\/d · (supply|Germans|road speed)/.test(x)), JSON.stringify(strength));
+
   check('no errors on the page', errors.length === 0, errors.join('\n'));
   console.log(failed ? `\n${failed} failed` : '\nall passed');
   await browser.close();

@@ -215,6 +215,15 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - Steve chose: draw them. They are now thin lines on the map: faint and dashed until they carry trains, solid once they do. Legend entry "Port link"; hovering Paris or Liège says whose trains join there and when; How to play mentions them. US First's supply line already shows "Le Havre" as its source when the link is in use
 - The links are one list in `js/data.js` (PORT_LINKS), used by the rules, the map and the hover. Rules unchanged (same fingerprint)
 
+## 26. Our strength against the Germans; clearer port links
+
+- Steve: is there any way to see Allied vs German fighting strength at the front? And make the grey port-link lines more obvious, thicker and away from the rivers
+- Steve chose: in each army row. Under its divisions: "⚔️ 12 vs 15", a green/red bar of the two, then the speed it can make with full supply and what holds it back (supply, Germans or road speed). Hover for the sums
+  - German strength is shown as the attack power needed to go full speed through them (resistance × 34 ÷ 70), so the two numbers compare directly: over half the bar green and the Germans can't slow the army
+  - The speed includes the catch-up bonus when the army is behind its neighbour
+- Port links are now thicker (3 px dashed, 4 px solid once in use) and in the map ink, and bend round so they don't run along the Seine (Rouen to Paris) or the Meuse (Antwerp to Liège). Le Havre's own line to Rouen is drawn the same way
+- New check: every army row shows the strength line
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -222,4 +231,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 135 min | Prompts 17–25: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump; port links drawn |
+| 4 | 2026-10-30 | about 145 min | Prompts 17–26: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump; port links drawn; strength vs the Germans |

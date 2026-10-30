@@ -433,6 +433,35 @@ const UI = (() => {
     return `<div class="pipe-node" title="Where this sector's trains are landed today\n${lines}"><b>${main}</b>${from.length > 1 ? `<small>+ ${name(from.slice(1).flatMap(x => x.ports))}</small>` : ''}${storm ? '<small class="warn">🌊 storm</small>' : '<small>⚓ landing</small>'}</div>`;
   }
 
+  // Our attack power against the Germans in front, and the speed that allows.
+  // German strength is shown as the attack power needed to go full speed through them, so the two numbers compare directly
+  function strengthHTML(sec) {
+    const ours = Sim.power(sec, 'attack');
+    const germans = Math.max(8, sec.res) * MAX_SPEED / COMBAT_SPEED;
+    const lim = Sim.limits(sec);
+    // Behind a neighbour, the Germans fall back and the army goes faster
+    const flank = 1 + Math.min(FLANK_MAX, Sim.flankLead(st)[sec.id] * FLANK_PER);
+    const top = Math.min(lim.mobility, lim.combat) * flank;
+    const f = flows(sec);
+    // What holds it back most: supply when the front is running low and can't be refilled, otherwise the Germans or its slowest units
+    const brake = Math.min(f.daysF, f.daysA) < 1 && Math.min(f.truckRatio, f.trainRatio) < 1 ? 'supply'
+      : lim.combat < lim.mobility ? 'Germans' : 'road speed';
+    // Our share of the two strengths: over half and the Germans can't slow it below full speed
+    const share = Math.round(ours / (ours + germans) * 100);
+    const fallBack = flank > 1.01 ? `, +${Math.round((flank - 1) * 100)}% as the Germans fall back` : '';
+    const title = `Our attack power: ${Math.round(ours)} (infantry ${UNIT_TYPES.inf.attack}, armour ${UNIT_TYPES.pz.attack}, artillery ${UNIT_TYPES.art.attack} each).
+`
+      + `Germans in front: ${Math.round(germans)}, the attack power needed to go full speed (${MAX_SPEED} km a day) through them.
+`
+      + `With full supply it can go about ${Math.round(top)} km a day: the Germans allow ${Math.round(lim.combat)}, its slowest units ${Math.round(lim.mobility)}${fallBack}.
+`
+      + 'Bombers, artillery while holding, and pushing on wear the Germans down; counterattacks and the German border stiffen them.';
+    return `<span class="strength" title="${title}">`
+      + `<span>⚔️ <b>${Math.round(ours)}</b> vs <b>${Math.round(germans)}</b></span>`
+      + `<span class="vs"><i style="width:${share}%"></i></span>`
+      + `<span>${Math.round(top)} km/d · ${brake}</span></span>`;
+  }
+
   // How far the front still has to go to the next station on its line
   function nextStation(sec) {
     const line = Sim.sectorDef(sec.id).line, kms = Sim.LINES[sec.id];
@@ -502,7 +531,7 @@ const UI = (() => {
         ...st.queue.filter(q => q.sector === sec.id).map(q => `${unitIcon(q.type)} ${UNIT_TYPES[q.type].short} loading`),
         ...st.marching.filter(m => m.sector === sec.id).map(m => `${unitIcon(m.type)} ${UNIT_TYPES[m.type].short} in ${Math.max(1, m.day - st.day + 1)} d`),
       ];
-      c.forces.innerHTML = forces + (coming.length ? `<span class="coming">coming: ${coming.join(', ')}</span>` : '');
+      c.forces.innerHTML = forces + strengthHTML(sec) + (coming.length ? `<span class="coming">coming: ${coming.join(', ')}</span>` : '');
     }
 
     // Ports: what each lands, its state, and the port companies clearing it
