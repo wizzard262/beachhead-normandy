@@ -58,7 +58,7 @@ const Sim = (() => {
     for (const key in LINKS) st.links[key] = { done: START_CONVERTED.includes(key) ? LINKS[key].len : 0 };
     for (const id in PORTS) {
       const P = PORTS[id];
-      st.ports[id] = { cond: P.cond, taken: !P.takenWith, companies: id === 'cherbourg' ? 6 : id === 'beaches' ? 2 : 0, scheldt: P.scheldt ? 0 : 100 };
+      st.ports[id] = { cond: P.cond, taken: !P.takenWith, companies: id === 'cherbourg' ? 6 : 0, scheldt: P.scheldt ? 0 : 100 };
     }
     st.bridges = BRIDGES.map(b => Object.assign({}, b, { state: 'enemy', done: 0 }));
     for (const s of SECTORS) {
@@ -412,6 +412,11 @@ const Sim = (() => {
       const before = ps.cond;
       ps.cond = Math.min(100, ps.cond + c * PORT_CLEAR);
       if (before < 100 && ps.cond >= 100) rep.push(`⚓ ${P.name} fully cleared: ${P.trains} trainloads a day.`);
+      // A port at 100% needs no more work: its companies go back to the free pool
+      if (ps.cond >= 100 && ps.scheldt >= 100 && ps.companies > 0) {
+        rep.push(`⚓ ${ps.companies} port compan${ps.companies === 1 ? 'y' : 'ies'} freed from ${P.name}: it's at 100%.`);
+        ps.companies = 0;
+      }
     }
     // Clearing the Scheldt also takes fighting: the British & Canadians holding at Antwerp with ammo
     const brit = st.sectors.find(x => x.id === 'north');

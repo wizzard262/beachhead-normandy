@@ -99,6 +99,11 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 
 - The trains count showed a long fraction: a division part-way through loading holds the rest of its trains. The free count now rounds down to whole trains (also in Railhead)
 
+## 11. Port companies come back at 100%
+
+- When a port reaches 100%, take its port companies off automatically: they go back to the free pool, and the report says so
+- The game now starts with 2 companies free (the beaches start at 100%, so none are put there)
+
 ## Sessions
 
 | # | Date | Length | What we did |
