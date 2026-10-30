@@ -144,6 +144,27 @@ check('day 1 is the campaign start date', () => {
   assert(Sim.dateText(1) === expected, `day 1 shows ${Sim.dateText(1)}`);
 });
 
+check('sending more trains never gets fewer through', () => {
+  // Through a game, for each army: add trains one at a time and check what gets through never drops
+  for (let seed = 1; seed <= 10; seed++) {
+    const st = Sim.newGame(seed);
+    for (let day = 0; day < 40 && !st.won && !st.lost; day++) {
+      if (day % 5 === 0) for (const sec of st.sectors) {
+        const kept = sec.trains;
+        let last = -1;
+        for (let n = 0; n <= 12; n++) {
+          sec.trains = n;
+          const got = Sim.forecast(st)[sec.id].trains;
+          assert(got >= last - 1e-6, `seed ${seed} day ${st.day} ${sec.id}: ${n} trains get ${got.toFixed(2)} through, ${n - 1} got ${last.toFixed(2)}`);
+          last = got;
+        }
+        sec.trains = kept;
+      }
+      Sim.endDay(st);
+    }
+  }
+});
+
 check('an army behind its neighbour catches up (flanking)', () => {
   if (typeof FLANK_PER === 'undefined') return;   // Railhead has no flanking
   // The same day twice: once with US First level with US Third, once far ahead of it
