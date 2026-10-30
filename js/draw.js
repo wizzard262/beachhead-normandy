@@ -271,8 +271,9 @@ const Draw = (() => {
   }
 
   // Port links (see PORT_LINKS): dashed until they carry trains, then solid like working track.
-  // They bend round so they don't run along the rivers (the Seine between Rouen and Paris, the Meuse near Liège)
-  const PORT_LINK_BENDS = { lehavre: [[0.47, 0.34]], antwerp: [[0.92, 0.15]] };
+  // They curve round so they don't run along the rivers (the Seine between Rouen and Paris, the Meuse near Liège):
+  // each curve is pulled towards its point here
+  const PORT_LINK_BENDS = { lehavre: [0.50, 0.33], antwerp: [0.90, 0.16] };
   function portLinkStyle(used) {
     ctx.lineCap = 'round';
     ctx.strokeStyle = K.ink;
@@ -286,11 +287,12 @@ const Draw = (() => {
       // In use: today some of that army's trains come from this port
       const from = (fc[L.sector] && fc[L.sector].from) || [];
       const used = from.some(x => x.ports.includes(L.port) && x.trains > 0.05);
-      // From the port's station, round the bend, to where it joins the army's line
-      const route = [P[L.from], ...(PORT_LINK_BENDS[L.port] || []).map(b => px(...b)), P[L.at]];
+      // A smooth curve from the port's station to where it joins the army's line
+      const a = P[L.from], b = P[L.at];
+      const pull = PORT_LINK_BENDS[L.port] ? px(...PORT_LINK_BENDS[L.port]) : { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
       portLinkStyle(used);
-      ctx.beginPath(); ctx.moveTo(route[0].x, route[0].y);
-      for (const p of route.slice(1)) ctx.lineTo(p.x, p.y);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y);
+      ctx.quadraticCurveTo(pull.x, pull.y, b.x, b.y);
       ctx.stroke();
       ctx.setLineDash([]); ctx.globalAlpha = 1;
     }
