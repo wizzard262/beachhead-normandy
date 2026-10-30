@@ -12,4 +12,4 @@ Take Paris, Antwerp, Aachen and Metz before the deadline:
 - **New divisions** land and go forward by train
 - Resistance stiffens at the German border
 
-Open `index.html` in a browser. No build step. A sister game to [Railhead](https://www.harriercarrier.com/railhead/index.html).
+Open `index.html` in a browser. No build step. A sister game to [Railhead](https://wizzard262.github.io/railhead/). Play Beachhead at https://wizzard262.github.io/railhead-normandy/.
