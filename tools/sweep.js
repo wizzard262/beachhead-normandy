@@ -21,6 +21,15 @@ const strategies = {
     }
   },
 };
+// What any player does each morning: put free trains on the lines that can take them, the army furthest from its objective first
+// (lines can't take more trains than get through, so trains sent back at the start of a day wait in the pool)
+function fillTrains(st) {
+  while (Sim.freeTrains(st) > 0) {
+    const room = st.sectors.filter(s => Sim.canAddTrain(st, s));
+    if (!room.length) break;
+    room.sort((a, b) => (Sim.LINES[b.id].at(-1) - b.front) - (Sim.LINES[a.id].at(-1) - a.front))[0].trains++;
+  }
+}
 strategies.pulseRecon = st => { strategies.pulse(st); strategies.recon(st); };
 // Hold whenever the front is nearly out, and only go again with 4 days in hand for the big push
 strategies.build4 = st => {
@@ -94,7 +103,7 @@ for (const arg of process.argv.slice(2).length ? process.argv.slice(2) : ['']) {
     let wins = 0;
     for (let seed = 1; seed <= 150; seed++) {
       const st = ctx.Sim.newGame(seed, level);
-      while (!st.won && !st.lost) { play(st); ctx.Sim.endDay(st); }
+      while (!st.won && !st.lost) { play(st); if (name !== 'idle') fillTrains(st); ctx.Sim.endDay(st); }
       if (st.won) wins++;
     }
     out.push(`${name} ${Math.round(wins / 1.5)}%`);

@@ -6,7 +6,7 @@ load('data.js'); load('sim.js');
 
 // Fingerprint of 30 full games per strategy below. It changes only when the rules or numbers change.
 // After a deliberate rules change, run the tests and paste the new value it prints here
-const FINGERPRINT = '1f471a43';
+const FINGERPRINT = 'd670beb5';
 
 let failed = 0;
 function check(name, fn) {
@@ -162,6 +162,31 @@ check('sending more trains never gets fewer through', () => {
       }
       Sim.endDay(st);
     }
+  }
+});
+
+check('each day starts with no army sending more trains than its line takes', () => {
+  if (!Sim.trimTrains) return;   // Railhead has no train limit
+  for (let seed = 1; seed <= 10; seed++) {
+    const st = Sim.newGame(seed);
+    for (let day = 0; day < 40 && !st.won && !st.lost; day++) {
+      // Pile every army's trains up, as a player might, then end the day
+      for (const sec of st.sectors) sec.trains += 6;
+      Sim.endDay(st);
+      for (const sec of st.sectors) {
+        const sends = sec.trains + Sim.troopTrains(st, sec.id);
+        assert(sec.trains === 0 || sends <= Sim.lineTakes(st, sec), `seed ${seed} day ${st.day} ${sec.id}: sends ${sends}, line takes ${Sim.lineTakes(st, sec)}`);
+      }
+    }
+  }
+});
+
+check('line takes is a whole number, rounded up', () => {
+  if (!Sim.lineTakes) return;
+  const st = Sim.newGame(4);
+  for (const sec of st.sectors) {
+    const got = Sim.forecast(st)[sec.id].trains, takes = Sim.lineTakes(st, sec);
+    assert(Number.isInteger(takes) && takes >= got - 1e-6 && takes < got + 1, `${sec.id}: ${got.toFixed(2)} get through, line takes ${takes}`);
   }
 });
 

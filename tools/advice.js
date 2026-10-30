@@ -72,7 +72,7 @@ function check(name, ok, detail) {
       // Stations repaired so every landed train gets through, then every army on the same mix
       Game.state.nodes.caen.cond = 100;
       Game.state.nodes.stlo.cond = 100;
-      Game.state.sectors.forEach(s => { s.fuelMix = mix; });
+      Game.state.sectors.forEach(s => { s.fuelMix = mix; s.trains = 5; });
       Game.forecast = Sim.forecast(Game.state);
       UI.update();
       return document.querySelector('#fuel-state').textContent;
@@ -92,6 +92,20 @@ function check(name, ok, detail) {
     return { text: e.textContent, title: e.title };
   });
   check('trains short in a storm: badge says short and why', trainsBadge.text.endsWith('short') && trainsBadge.title.includes('Channel storm'), JSON.stringify(trainsBadge));
+
+  // A full line: its + button is off and it says how many whole trains it takes
+  const full = await page.evaluate(() => {
+    Game.restart();
+    const st = Game.state, third = st.sectors.find(s => s.id === 'south');
+    third.trains = Sim.lineTakes(st, third) - Sim.troopTrains(st, 'south');
+    Game.forecast = Sim.forecast(st);
+    UI.update();
+    // US Third's trains stepper: the first stepper in its row
+    const row = document.querySelectorAll('[data-label="🚂 Trains"]')[2] || document.querySelectorAll('.brow:not(.head)')[2];
+    const plus = [...row.querySelectorAll('button')].find(b => b.textContent.trim() === '+');
+    return { plusOff: plus ? plus.disabled : null, note: row.textContent };
+  });
+  check('full line: + is off and it says the whole trains it takes', full.plusOff === true && /line takes \d+(?!\.)/.test(full.note), JSON.stringify(full));
 
   check('no errors on the page', errors.length === 0, errors.join('\n'));
   console.log(failed ? `\n${failed} failed` : '\nall passed');

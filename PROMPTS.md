@@ -187,6 +187,16 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - That was the bug fixed in prompt 18 (trains cut at every full part of the line): the more trains sent, the more parts were full and the harder they were cut. Old rules, US Third on day 13: 4 trains → 3.5 through, 8 → 2.8, 10 → 2.3. Now: 4 or more → 3.5 (the narrowest station's limit)
 - New test: across 10 games, adding trains to any army never gets fewer through
 
+## 23. No more trains than the line takes
+
+- Steve: don't allow more trains assigned than the track can take; at the start of each day remove any surplus; make the number it can take a whole number, rounded up
+- **Line takes** = the trains a day that get through to that army, rounded up to a whole train (3.5 → 4). It is shown under 🚂 Trains when the line is full, in the advice, and the + button is off once one more train wouldn't get through
+- **Start of each day** (and of the game): any army sending more than its line takes has trains sent back to the pool, one at a time from the army most over, as taking trains off one army gives others on the same track more room. The report says so ("🚂 US Third Army: 2 trains sent back to the pool; its line can't take them")
+- Assumption: trains sent back wait in the pool; the player puts them back (the advice says "Add N trains" when a line has room again). They are not put back automatically
+- Day 1 now starts with fewer trains on the US armies: Saint-Lô is at 25% and takes 2 a day
+- The balance sweep's players now put free trains on lines with room each morning (as a person would). Normal: pulse 79%, build4 70%, Red Ball only 80%, rest only 95%; leaving everything alone still loses. New fingerprint `d670beb5`
+- New tests: each day starts with no army over its line; line takes is a whole number rounded up; the + button is off on a full line
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -194,4 +204,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 1 | 2026-10-29 | about 60 min (Steve asleep) | Prompt 1: the first attempt, copied from Railhead and turned into Normandy 1944: map, beaches and ports, storms, bombed track, the West Wall, Allied names, levels, history on the result screen |
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
-| 4 | 2026-10-30 | about 100 min | Prompts 17–22: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective |
+| 4 | 2026-10-30 | about 115 min | Prompts 17–23: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes |

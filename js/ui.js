@@ -141,10 +141,10 @@ const UI = (() => {
       const pipe = el('div', 'cell c-pipe pipe');
 
       const free = (field, total) => Sim.freePool(st, field, total) > 0;
-      const trains = stepper('🚂 Trains', () => sec.trains, v => sec.trains = v, () => Sim.freeTrains(st) > 0, () => {
-        const f = window.Game.forecast[sec.id];
-        const short = f && f.trains + 0.05 < sec.trains + Sim.troopTrains(st, sec.id);
-        return `${t(sec.trains * TRAIN_TONS)} t a day` + (short ? `<br><span class="warn">line takes ${f.trains.toFixed(1)}</span>` : '');
+      // One more train only when one is free and the line can take it
+      const trains = stepper('🚂 Trains', () => sec.trains, v => sec.trains = v, () => Sim.freeTrains(st) > 0 && Sim.canAddTrain(st, sec), () => {
+        const full = !Sim.canAddTrain(st, sec);
+        return `${t(sec.trains * TRAIN_TONS)} t a day` + (full ? `<br><span class="warn">line takes ${Sim.lineTakes(st, sec)}</span>` : '');
       });
       const trucks = stepper('🚚 Trucks', () => sec.trucks, v => Sim.moveTrucks(st, sec, v - sec.trucks), () => free('trucks', TRUCK_COLUMNS), () => {
         const c = Math.round(sec.truckCond), col = condColour(c, 40);
@@ -227,7 +227,9 @@ const UI = (() => {
     const trainNeed = need + burn + bomberFuel;
     return {
       n, need, gap, perTruck, truckCap, burn, bomberFuel, trainTons, trainNeed,
-      lineShort: f.trains + 0.05 < sec.trains + Sim.troopTrains(st, sec.id), lineTakes: f.trains,
+      // Line full: it can't take another train. Over: more trains sent than get through (rounded up), sent back at the start of the day
+      lineFull: !Sim.canAddTrain(st, sec), lineTakes: Sim.lineTakes(st, sec),
+      lineOver: sec.trains + Sim.troopTrains(st, sec.id) > Sim.lineTakes(st, sec),
       trainRatio: trainTons / Math.max(1, trainNeed),
       truckRatio: truckCap / Math.max(1, need),
       // Days in hand are always days of advancing, so they mean the same on Hold
@@ -343,9 +345,9 @@ const UI = (() => {
         return ['bad', `${bridgeIcon('blown')} The railhead is stuck at the blown <b>${br.river}</b> bridge: ${Math.round(left)} battalion-days of work, about ${eng ? Math.ceil(left / eng) : '∞'} days with ${sec.engineers} engineers. Add engineers, or set them to <b>🛤️ Track</b>.`];
       }
     }
-    if (f.lineShort && f.trainRatio < 1) {
+    if (f.lineFull && f.trainRatio < 1) {
       const line = lineAdvice(sec);
-      return ['bad', `🚧 The line only takes <b>${f.lineTakes.toFixed(1)}</b> trains a day${line.why}. ${line.fix}`];
+      return ['bad', `🚧 The line only takes <b>${f.lineTakes}</b> trains a day${line.why}. ${line.fix}`];
     }
     // Petrol is short everywhere: more trains, trucks or the Red Ball can't bring fuel that never landed
     const fuel = Sim.fuelPlan(st);
@@ -375,9 +377,9 @@ const UI = (() => {
       const more = Math.ceil((f.trainNeed - f.trainTons) / TRAIN_TONS);
       return [tone(f.trainRatio), `🚂 Trains bring ${t(f.trainTons)} t a day; this sector needs about ${t(f.trainNeed)} with truck and bomber fuel. Add <b>${more}</b> train${more > 1 ? 's' : ''}${source(sec, 'trains', more)}.`];
     }
-    if (f.lineShort) {
+    if (f.lineOver) {
       const line = lineAdvice(sec);
-      return ['meh', `🚧 Only <b>${f.lineTakes.toFixed(1)}</b> of your trains get through${line.why}. Move the extra trains to another army${line.damaged ? ', or set engineers to <b>Station 🚉</b>' : ''}.`];
+      return ['meh', `🚧 Only <b>${f.lineTakes}</b> of your trains get through${line.why}. The extra go back to the pool at the start of the day${line.damaged ? '; set engineers to <b>Station 🚉</b> to take more' : ''}.`];
     }
     if (f.depotDaysA < 1 && f.depotDaysF > 3) return ['meh', '💥 The depot is nearly out of <b>ammo</b> but has spare fuel. Pick the mix underlined in green.'];
     if (f.depotDaysF < 1 && f.depotDaysA > 3) return ['meh', '⛽ The depot is nearly out of <b>fuel</b> but has spare ammo. Pick the mix underlined in green.'];
@@ -402,7 +404,7 @@ const UI = (() => {
     const past = rh.laid >= 1;
     return `
       ${sourceNode(sec)}
-      ${seg('train', f.trainRatio, `🚂 ${t(f.trainTons)} t/d`, f.lineShort ? '<span class="warn">line limit</span>' : `needs ${t(f.trainNeed)}`, true)}
+      ${seg('train', f.trainRatio, `🚂 ${t(f.trainTons)} t/d`, f.lineFull ? '<span class="warn">line limit</span>' : `needs ${t(f.trainNeed)}`, true)}
       <div class="pipe-node" title="${past ? `Trains run on ${t(rh.laid)} km past ${NODES[rh.node].name}; the depot is at the end of the track` : `The depot is at ${NODES[rh.node].name}`}"><b>${NODES[rh.node].name}</b>${health(rh.node)}<small>⛽ ${t(sec.depot.fuel)}</small><small>💥 ${t(sec.depot.ammo)}</small></div>
       <div class="pipe-pair" title="Train to the end of the track, then trucks to the front">
         ${past ? seg('train extend', f.trainRatio, `🚂 +${t(rh.laid)} km`, 'to track end', false, rh.laid) : ''}
