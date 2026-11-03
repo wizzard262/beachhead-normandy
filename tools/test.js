@@ -166,7 +166,7 @@ check('sending more trains never gets fewer through', () => {
 });
 
 check('each day starts with no army sending more trains than its line takes', () => {
-  if (!Sim.trimTrains) return;   // Railhead has no train limit
+  if (!Sim.trimTrains) return;   // only where sim.js has the train limit
   for (let seed = 1; seed <= 10; seed++) {
     const st = Sim.newGame(seed);
     for (let day = 0; day < 40 && !st.won && !st.lost; day++) {
