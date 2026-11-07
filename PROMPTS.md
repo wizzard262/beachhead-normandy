@@ -242,6 +242,13 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 - The rules were right (Aachen was taken); the drawing was wrong. The red line was smoothed by cutting each corner, so at a sharp bend (an army far ahead of its neighbours) it passed west of the army's own front point, leaving Aachen on the German side
 - The front now passes through every army's front point (a Catmull-Rom curve), and each point is drawn 12 px towards the Germans, so a town just taken sits on our side. The shading, the teeth and the badge tails all follow the same line
 
+## 30. Map readable on a phone
+
+- Steve: copy Railhead's phone map fix into Beachhead
+- On a phone (520 px wide or less) the map is drawn 760 px wide instead of squeezed to the screen, and swipes sideways inside its box; a line under it says "Swipe the map sideways to see it all". The page itself has no sideways scroll
+- **End day** and **?** sit outside the swiping part, so they stay top right
+- Laptops and tablets unchanged (checked at 600, 1100 and 1600 px wide)
+
 ## Sessions
 
 | # | Date | Length | What we did |
@@ -250,3 +257,4 @@ Bombing the reported build-ups doesn't help yet (it wins less than leaving thing
 | 2 | 2026-10-29 | about 60 min | Prompt 2: ports, port companies, the Scheldt, forward ports, Liège, blown bridges on the map |
 | 3 | 2026-10-29 | about 90 min | Prompts 4–6: renamed Beachhead, badge and map looks (recon badge, blueprint map), truck wear, the Red Ball, scarce fuel |
 | 4 | 2026-10-30 | about 165 min | Prompts 17–29: advice for full lines, shared Saint-Lô, scarce petrol, the green mix and truck counts; trains no longer cut twice on a full line; truck distance the same everywhere, legs to scale; petrol badge in tons, why trains are short; flanking catch-up, Paris no longer an objective; no more trains than the line takes; beach fuel dump; port links drawn; strength vs the Germans; smooth port links, prompts page full width; full report; front drawn past taken towns |
+| 5 | 2026-11-07 | about 5 min | Prompt 30: map readable on a phone (copied from Railhead) |

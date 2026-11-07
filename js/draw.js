@@ -4,6 +4,8 @@
 const Draw = (() => {
   const W = 1000;
   let H = 425;
+  // On a phone the map is drawn at least this wide (CSS px) so its words can be read; the box swipes sideways
+  const PHONE_MAP_WIDTH = 760;
   let canvas, ctx, paper, paperH = 0, scale = 1;
 
   // Room left round the stations for their labels
@@ -50,7 +52,10 @@ const Draw = (() => {
     if (box && !window.matchMedia('(max-width: 1300px)').matches && box.clientHeight > 100) {
       w = box.clientWidth; h = box.clientHeight;
     } else {
-      w = box ? box.clientWidth : canvas.getBoundingClientRect().width; h = w * 425 / W;
+      w = box ? box.clientWidth : canvas.getBoundingClientRect().width;
+      // On a phone, never draw narrower than PHONE_MAP_WIDTH: the box scrolls sideways instead
+      if (window.matchMedia('(max-width: 520px)').matches) w = Math.max(w, PHONE_MAP_WIDTH);
+      h = w * 425 / W;
     }
     // Not laid out yet (no width or height): keep the last size rather than draw on nothing
     if (!(w > 0) || !(h > 0)) return;
@@ -744,6 +749,8 @@ const Draw = (() => {
 
   let bridgesNow = [];
   function render(st, opts) {
+    // Nothing to draw on until the map has had a size
+    if (!paper) return;
     bridgesNow = st.bridges;
     opts = opts || {};
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
